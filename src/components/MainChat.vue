@@ -1,50 +1,73 @@
 <template>
   <div class="box">
-    <div class="inner">
+    <div class="inner" @click="clear" v-show="display">
       <Left :user="user"/>
       <router-view></router-view>
+      <div class="func-area">
+        <div>
+          <span class="gray-bg" @click="minWin">-</span>
+          <span class="gray-bg" @click="maxWin">□</span>
+          <span class="red-bg" @click="closeWin">x</span>
+        </div>
+      </div>
+    </div>
+    <div class="thumbnail" v-show="!display" @click="show">
     </div>
   </div>
 </template>
 
 <script>
   import Left from '@/components/Left'
+  import storage from '../storage'
+  import config from '../config'
 
   export default {
     name: 'MainChat',
     components: {Left},
     data () {
       return {
-        user: {}
+        user: {},
+        display: true
       }
     },
     created () {
-      let user = window.localStorage.user
-      if (user == null) {
-        location.href = '/'
-      }
-      this.user = JSON.parse(user)
+      let user = storage.getUser()
+      this.user = user
       const wsChat = new WebSocket(config.ws)
-      wsChat.onopen = function () {
-        send()
-        let s = setInterval(send, 1000 * 15)
+      window.wsChat = wsChat
+      wsChat.onopen = () => {
+        this.authentication()
+      }
 
-        function send () {
-          try {
-            var req = {
-              type: 0,
-              data: 'ping'
-            }
-            wsChat.send(JSON.stringify(req))
-          } catch (err) {
-            console.error(err)
-            clearInterval(s)
-          }
+    },
+    methods: {
+      clear() {
+
+      },
+      closeWin: function () {
+
+      },
+      maxWin: function () {
+
+      },
+      minWin: function () {
+        this.display = false
+      },
+      show: function () {
+        this.display = true
+      },
+      authentication: function () {
+        let auth = {
+          userId: this.user.userId
         }
+        let req = {
+          type: 1,
+          ticket: this.user.ticket,
+          data: JSON.stringify(auth)
+        }
+        wsChat.send(JSON.stringify(req))
       }
-      wsChat.onmessage = function (evt) {
-        // console.log(evt.data)
-      }
+
     }
   }
 </script>
@@ -59,6 +82,7 @@
   .inner {
     width: 870px;
     height: 605px;
+    border: solid 1px #d6d6d6;
   }
 
   li, ul, div {
@@ -69,5 +93,41 @@
   li {
     list-style: none;
   }
+
+  .func-area {
+    display: inline;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 1000;
+    line-height: 5px;
+  }
+
+  .red-bg, .gray-bg {
+    padding: 10px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 1.2em;
+  }
+
+  .red-bg:hover {
+    background-color: #F45454;
+    color: #ffffff;
+  }
+
+  .gray-bg:hover {
+    background-color: #E3E3E3;
+  }
+
+  .thumbnail{
+    position: absolute;
+    bottom: 5px;
+    background: url("/static/img/thumbnail.png") center;
+    width:65px;
+    height: 65px;
+  }
+
+
+
 
 </style>

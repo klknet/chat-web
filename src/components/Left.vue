@@ -15,7 +15,7 @@
 
       <li>
         <a>
-          <img id="settings" src="static/img/p4.png">
+          <img id="settings" src="/static/img/p4.png">
         </a>
       </li>
     </ul>
@@ -23,6 +23,8 @@
 </template>
 
 <script>
+  import vm from '@/event'
+
   let map = [
     ['p1', 'p1-1'], ['p2', 'p2-1'], ['p3', 'p3-1']
   ]
@@ -40,7 +42,19 @@
       }
     },
     created() {
-      this.$router.push(link[0])
+      let hash = location.hash
+      // debugger
+      // this.$router.push(link[this.navIndex])
+      for (let i in link){
+        if(hash.endsWith(link[i].name.toLowerCase())){
+          this.navIndex = i
+        }
+      }
+    },
+    mounted() {
+      vm.$on('navIdx', (data) => {
+        this.navIndex = data
+      })
     },
     methods: {
       format (m, i) {

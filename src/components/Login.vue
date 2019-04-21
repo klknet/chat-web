@@ -21,18 +21,19 @@
 </template>
 
 <script>
-  import axios from 'axios'
+  import axios from '../request'
+  import storage from '../storage'
+  import util from '../util'
 
   export default {
     name: 'Login',
     data () {
       return {
-        username: 'konglk',
-        pwd: 'konglk'
+        username: '',
+        pwd: ''
       }
     },
     created () {
-      axios.defaults.baseURL = 'http://' + config.host + config.context
     },
     methods: {
       doLogin () {
@@ -46,8 +47,10 @@
           }
         }).then(res => {
           if (res.data) {
-            localStorage.user = JSON.stringify(res.data)
-            this.$router.push('/main')
+            let user = res.data
+            util.groupFriend(user)
+            storage.setUser(user)
+            this.$router.push('/main/chat')
           } else {
 
           }
