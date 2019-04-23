@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="register">
       <div class="form-group">
         <div class="input">
           <label>用户名</label>
@@ -94,6 +94,11 @@
 </script>
 
 <style scoped>
+  .register {
+    text-align: center;
+    margin-top: 50px;
+  }
+
   .input {
     display: inline-block;
     width: 300px;

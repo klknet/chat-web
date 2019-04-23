@@ -24,7 +24,7 @@
               </span>
               <span>
                   <span class="nickname">{{conversation.notename}}</span>
-                  <span class="last-date">{{formatDate(conversation.updateTime)}}</span>
+                  <span class="last-date">{{formatDate(conversation.updateTime, 'YY/M/D')}}</span>
                   <span class="last-msg">
                       <template v-if="conversation.msgType === null">
                       </template>
@@ -70,7 +70,7 @@
               <div v-if="index==0" class="oldest-time-area">
                 <span class="oldest-time">{{formatDate(message.createTime)}}</span>
               </div>
-              <div v-if="index>0 && info.messages[index].createTime-info.messages[index-1].createTime > 300000"
+              <div v-if="index>0 && diff(info.messages, index)"
                    class="oldest-time-area">
                 <span class="oldest-time">{{formatDate(message.createTime)}}</span>
               </div>
@@ -157,21 +157,25 @@
     created () {
       let user = storage.getUser()
       this.user = user
-      axios.get('/conversation/list?userId=' + user.userId).then(res => {
-        this.conversations = res.data
-        for (let conv of res.data) {
-          let info = {}
-          info.messages = []
-          info.showMore = false
-          info.conversationId = conv.conversationId
-          this.messageMap.push(info)
-        }
-        storage.setConversation(res.data)
+      if(!user.conversations) {
+        axios.get('/conversation/list?userId=' + user.userId).then(res => {
+          this.conversations = res.data
+          this.buildMessageMap(res.data)
+          storage.setConversation(res.data)
+          if(this.$route.params.idx != undefined) {
+            let idx = parseInt(this.$route.params.idx)
+            this.show(this.conversations[idx], idx)
+          }
+        })
+      }else {
+        this.conversations = user.conversations
+        this.buildMessageMap(user.conversations)
         if(this.$route.params.idx != undefined) {
           let idx = parseInt(this.$route.params.idx)
           this.show(this.conversations[idx], idx)
         }
-      })
+      }
+
       let self = this
       window.wsChat.onmessage = (evt) => {
         let resp = JSON.parse(evt.data)
@@ -208,8 +212,21 @@
 
     },
     methods: {
-      formatDate (c) {
-        return util.formatDate(c)
+      diff(messages, index) {
+        let d = new Date(messages[index].createTime).getTime() - new Date(messages[index-1].createTime).getTime()
+        return d > 300000
+      },
+      buildMessageMap(conversations) {
+        for (let conv of conversations) {
+          let info = {}
+          info.messages = []
+          info.showMore = false
+          info.conversationId = conv.conversationId
+          this.messageMap.push(info)
+        }
+      },
+      formatDate (c, fmt) {
+        return util.formatDate(c, fmt||'YYYY年M月D日  HH:mm')
       },
       show (c, idx) {
         this.chatPerson = {
@@ -356,8 +373,8 @@
     min-width: 300px;
     float: left;
     height: 100%;
-    background: #F5F5F5 url("/static/img/wechat.png") no-repeat center;
-    background-size: 93px;
+    background: #F5F5F5; /*url("/static/img/wechat.png") no-repeat center;
+    background-size: 93px;*/
   }
 
   .search {
@@ -376,6 +393,7 @@
   .search-input {
     background-color: #DBD9D8;
     border-radius: 5px;
+    margin-left: 10px;
     border: 1px solid #DBDBDB;
     height: 25px;
     padding: 8px 0 8px 25px;
@@ -396,7 +414,7 @@
     width: 20px;
     vertical-align: middle;
     margin-left: 4px;
-    padding: 4px 8px;``
+    padding: 4px 8px;
     border-radius: 5px;
     cursor: pointer;
     /*font-size: 1.2em;*/
@@ -555,7 +573,7 @@
 
   .chat-area .oldest-time-area .oldest-time {
     background-color: #DADADA;
-    padding: 2px 4px;
+    padding: 4px 5px;
     color: #FFFFFF;
     font-size: 0.9em;
   }

@@ -194,8 +194,8 @@
     min-width: 300px;
     float: left;
     height: 100%;
-    background: #F5F5F5 url("/static/img/wechat.png") no-repeat center;
-    background-size: 93px;
+    background: #F5F5F5;  /*url("/static/img/wechat.png") no-repeat center;
+    background-size: 93px;*/
   }
 
   .search {

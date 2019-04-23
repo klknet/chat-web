@@ -7,7 +7,8 @@ export default {
   /*
     格式化日期
      */
-  formatDate: function (c) {
+  formatDate: function (c, fmt) {
+    c = new Date(c)
     let curM = moment(c), copyM = moment(c)
     let now = moment().startOf('d')
     let diffNum = now.diff(copyM.startOf('d'), 'd')
@@ -20,7 +21,8 @@ export default {
         format = '昨天 ' + curM.format('HH:mm')
         break
       default:
-        format = curM.format('YY/M/D')
+        let form = fmt || 'YY/M/D'
+        format = curM.format(form)
     }
     return format
   },

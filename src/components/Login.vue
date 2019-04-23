@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="login">
     <div class="form-group">
       <div class="error-info" v-show="error">
         <em>用户名密码不正确</em>
@@ -79,6 +79,11 @@
 </script>
 
 <style scoped>
+  .login {
+    text-align: center;
+    margin-top: 50px;
+  }
+
   .error-info {
     margin: 10px 0;
   }

@@ -2,7 +2,9 @@
   <div class="box">
     <div class="inner" @click="clear" v-show="display" :class="{'full-screen': max}">
       <Left :user="user"/>
-      <router-view></router-view>
+      <router-view ></router-view>
+      <router-view name="roster"></router-view>
+      <router-view name="collector"></router-view>
       <div class="func-area">
         <div>
           <span class="gray-bg" @click="minWin">-</span>
