@@ -136,7 +136,7 @@
         let destId = this.friend.userId
         var conversations = storage.getConversation()
         for (let i in conversations) {
-          if (conversations[i].destId == userId) {
+          if (conversations[i].destId == destId) {
             console.log('已存在的会话')
             this.$router.push({name: 'Chat', params: {idx: i}})
             vm.$emit('navIdx', 0)
@@ -219,7 +219,8 @@
     padding: 8px 0 8px 25px;
     width: 192px;
     font-size: 12px;
-    color: #818181
+    color: #818181;
+    margin-left: 10px;
   }
 
   .search-input:focus {
@@ -228,6 +229,17 @@
 
   .search-input:focus {
     background-color: #ffffff;
+  }
+
+  .add-friend {
+    width: 20px;
+    vertical-align: middle;
+    margin-left: 4px;
+    padding: 4px 8px;``
+    border-radius: 5px;
+    cursor: pointer;
+    /*font-size: 1.2em;*/
+    background-color: #DCD9D8;
   }
 
   .add-friend:hover {

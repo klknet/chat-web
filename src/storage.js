@@ -1,3 +1,5 @@
+import util from './util'
+
 let storage = {
   setUser: function (user) {
     window.user = user
@@ -9,9 +11,13 @@ let storage = {
       user = localStorage.user
     }
     if (user == null) {
-      location.href = '/'
+      util.toIndex()
     }
     return JSON.parse(localStorage.user)
+  },
+  removeUser: function() {
+    localStorage.removeItem('user')
+    util.toIndex()
   },
   setConversation: function (conversations) {
     if(!window.user)

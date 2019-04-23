@@ -1,6 +1,6 @@
 <template>
   <div class="box">
-    <div class="inner" @click="clear" v-show="display">
+    <div class="inner" @click="clear" v-show="display" :class="{'full-screen': max}">
       <Left :user="user"/>
       <router-view></router-view>
       <div class="func-area">
@@ -27,7 +27,8 @@
     data () {
       return {
         user: {},
-        display: true
+        display: true,
+        max: false,
       }
     },
     created () {
@@ -38,6 +39,7 @@
       wsChat.onopen = () => {
         this.authentication()
       }
+      this.$router.push({name: 'Chat'})
 
     },
     methods: {
@@ -45,10 +47,12 @@
 
       },
       closeWin: function () {
+        window.wsChat.close()
+        storage.removeUser()
 
       },
       maxWin: function () {
-
+        this.max = !this.max
       },
       minWin: function () {
         this.display = false
@@ -83,6 +87,11 @@
     width: 870px;
     height: 605px;
     border: solid 1px #d6d6d6;
+  }
+
+  .full-screen {
+    width: 100%;
+    height: 100vh;
   }
 
   li, ul, div {

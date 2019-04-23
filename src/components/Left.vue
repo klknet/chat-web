@@ -14,8 +14,8 @@
       </li>
 
       <li>
-        <a>
-          <img id="settings" src="/static/img/p4.png">
+        <a id="settings" >
+          <img src="/static/img/p4.png">
         </a>
       </li>
     </ul>
@@ -86,6 +86,7 @@
     float: left;
     display: flex;
     justify-content: center;
+    position: relative;
   }
 
   .left ul {
@@ -109,6 +110,10 @@
   }
 
   #settings {
-    margin-top:335px;
+    position: absolute;
+    bottom: 10px;
+    right: 0;
+    display: inline-block;
+    width: 100%;
   }
 </style>

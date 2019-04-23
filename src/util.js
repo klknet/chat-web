@@ -28,8 +28,17 @@ export default {
     将好友按拼音首字母分组
      */
   groupFriend(user) {
-    user.friends.forEach(f => f.firstLetter = pinyin.getCamelChars(f.remark).charAt(0))
-    let groupFriend = lodash.groupBy(user.friends, friend => friend['firstLetter'])
-    user.groupFriend = groupFriend
+    if(user.friends) {
+      user.friends.forEach(f => f.firstLetter = pinyin.getCamelChars(f.remark).charAt(0))
+      let groupFriend = lodash.groupBy(user.friends, friend => friend['firstLetter'])
+      user.groupFriend = groupFriend
+    }
+
+  },
+  /*
+  跳转到首页
+   */
+  toIndex() {
+    location.href = '/'
   },
 }

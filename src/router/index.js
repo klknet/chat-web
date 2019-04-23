@@ -5,6 +5,7 @@ import MainChat from '@/components/MainChat'
 import Chat from '@/components/Chat'
 import Roster from '@/components/Roster'
 import Collector from '@/components/Collector'
+import Register from '@/components/Register'
 
 Vue.use(Router)
 
@@ -31,6 +32,11 @@ export default new Router({
           component: Collector
         }
       ]
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: Register,
     },
     {
       path: '/',

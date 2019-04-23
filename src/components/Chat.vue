@@ -186,6 +186,11 @@
               wsChat.send(ping)
             }, 15000)
             break
+          case 1:
+            if (resp.code == 60001) {
+              util.toIndex()
+            }
+            break;
           case 2:
             let message = JSON.parse(resp.data)
             for (let i in self.messageMap) {
@@ -297,18 +302,22 @@
 
 <style scoped>
   /* 设置滚动条的样式 */
-  ::-webkit-scrollbar {
-    width: 7px;
-    margin-left:2px;
-  }
+  /*::-webkit-scrollbar {*/
+    /*width: 7px;*/
+    /*margin-left:2px;*/
+  /*}*/
 
   /* 滚动条滑块 */
-  ::-webkit-scrollbar-thumb {
-    border-radius: 6px;
-    background-color: #D2D2D2;
-  }
+  /*::-webkit-scrollbar-thumb {*/
+    /*border-radius: 6px;*/
+    /*background-color: #D2D2D2;*/
+  /*}*/
 
-  ::-webkit-scrollbar-thumb:window-inactive {
+  /*::-webkit-scrollbar-thumb:window-inactive {*/
+    /*background:rgba(255,0,0,0.4);*/
+    /*display: none;*/
+  /*}*/
+  window-inactive {
     background:rgba(255,0,0,0.4);
     display: none;
   }
@@ -387,7 +396,7 @@
     width: 20px;
     vertical-align: middle;
     margin-left: 4px;
-    padding: 4px 8px;
+    padding: 4px 8px;``
     border-radius: 5px;
     cursor: pointer;
     /*font-size: 1.2em;*/
