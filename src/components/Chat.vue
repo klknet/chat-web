@@ -104,10 +104,10 @@
         <div class="content-area">
           <div class="menu-area">
                         <span class="menu-item">
-                            <img @click="propFile" src="static/img/file.png">
+                            <img @click="propFile" src="/web/static/img/file.png">
                         </span>
             <span class="menu-item videa-chat">
-                            <img src="static/img/video.png">
+                            <img src="/web/static/img/video.png">
                         </span>
           </div>
           <div class="content" @keydown.delete="clearMsg" @paste.prevent="pasteImg"
@@ -237,7 +237,8 @@
         let conv = this.conversations[idx]
         // debugger
         if(this.messageMap[idx].messages.length == 0) {
-          axios.get('/message/prev?cid='+conv.conversationId+'&createtime='+conv.createTime+'&include=true').then(res => {
+          let url = '/message/prev?cid='+conv.conversationId+'&createtime='+encodeURIComponent(conv.createTime)+'&include=true'
+          axios.get(url).then(res => {
             if(res.data) {
               this.messageMap[idx].messages = res.data
               this.cur = idx
@@ -252,7 +253,8 @@
       scroll2End() {
         this.$nextTick(() => {
           let chatArea = document.getElementsByClassName('chat-active')[0]
-          chatArea.scrollTop = chatArea.scrollHeight;
+          if(chatArea.scrollHeight)
+            chatArea.scrollTop = chatArea.scrollHeight;
         })
       },
       menu (index, e) {
@@ -274,6 +276,7 @@
           axios.delete('/conversation/delete', {params: data}).then(res => {
             console.log('delete')
             this.conversations.splice(this.delIdx, 1)
+            storage.spliceConversation(this.delIdx)
           })
         }
       },

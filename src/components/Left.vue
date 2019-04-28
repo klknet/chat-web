@@ -15,7 +15,7 @@
 
       <li>
         <a id="settings" >
-          <img src="/static/img/p4.png">
+          <img src="/web/static/img/p4.png">
         </a>
       </li>
     </ul>
@@ -58,7 +58,7 @@
     },
     methods: {
       format (m, i) {
-        return 'static/img/' + m[i == this.navIndex ? 0 : 1] + '.png'
+        return '/web/static/img/' + m[i == this.navIndex ? 0 : 1] + '.png'
       },
       select (i) {
         this.$router.push(link[i])

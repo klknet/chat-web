@@ -133,7 +133,7 @@
   .thumbnail{
     position: absolute;
     bottom: 5px;
-    background: url("/static/img/thumbnail.png") center;
+    background: url("/web/static/img/thumbnail.png") center;
     width:65px;
     height: 65px;
   }

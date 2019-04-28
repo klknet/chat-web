@@ -16,7 +16,7 @@
           <div class="group-content">
             <ul>
               <li @click="select(map[newFriendKey], newFriendKey)" :class="{active: cur === map[newFriendKey]}">
-                <img class="avatar" src="/static/img/newfriend.png"/>
+                <img class="avatar" src="/web/static/img/newfriend.png"/>
                 <span class="notation">新的朋友</span>
               </li>
             </ul>
@@ -55,7 +55,7 @@
             <div>
               <span class="nickname">{{friend.username}}</span>
               <template v-if="friend.gender != undefined">
-                <img class="sex" :src="friend.gender==0 ? '/static/img/female.png' : '/static/img/male.png'"/>
+                <img class="sex" :src="friend.gender==0 ? '/web/static/img/female.png' : '/web/static/img/male.png'"/>
               </template>
             </div>
             <div style="padding-top: 5px;">
@@ -148,7 +148,7 @@
         fd.set('userId', this.user.userId)
         axios.post('conversation/build', fd,
           {headers: {'Content-Type': 'application/x-www-form-urlencoded'}}).then(res => {
-
+          storage.removeConversation()
           this.$router.push({name: 'Chat', params: {idx: '0'}})
           vm.$emit('navIdx', 0)
         })
@@ -235,7 +235,7 @@
     width: 20px;
     vertical-align: middle;
     margin-left: 4px;
-    padding: 4px 8px;``
+    padding: 4px 8px;
     border-radius: 5px;
     cursor: pointer;
     /*font-size: 1.2em;*/

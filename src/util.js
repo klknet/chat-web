@@ -41,6 +41,6 @@ export default {
   跳转到首页
    */
   toIndex() {
-    location.href = '/'
+    location.href = '/web'
   },
 }

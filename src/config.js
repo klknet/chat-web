@@ -1,4 +1,5 @@
 let host = '127.0.0.1'
+host = '39.106.133.40'
 const config = {
   protocol: 'http',
   host,

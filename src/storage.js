@@ -33,6 +33,20 @@ let storage = {
       window.user = this.getUser()
     return window.user.conversations
   },
+  spliceConversation: function(idx) {
+    if(!window.user)
+      window.user = this.getUser()
+    window.user.conversations.splice(idx, 1)
+    this.setUser(window.user)
+  },
+  removeConversation: function() {
+    if(!window.user)
+      window.user = this.getUser()
+    if(window.user.conversations && window.user.conversations.length > 0) {
+      window.user.conversations = null
+      this.setUser(window.user)
+    }
+  },
   setGroupFriend(user) {
     if(user.friends) {
       user.friends.forEach(f => f.firstLetter = pinyin.getCamelChars(f.remark).charAt(0))
