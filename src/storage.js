@@ -11,6 +11,7 @@ let storage = {
     let user = window.user
     if (user == null) {
       user = localStorage.user
+      window.user = user
     }
     if (user == null) {
       util.toIndex()

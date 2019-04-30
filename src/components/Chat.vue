@@ -5,10 +5,12 @@
         <div>
           <i class="fa fa-search"></i>
           <input class="search-input" type="text" placeholder="搜索"/>
-          <span class="add-friend">+</span>
+          <span class="add-friend" @click="addFriend">+</span>
         </div>
       </div>
       <div class="conversations">
+        <router-view>
+        </router-view>
         <ul>
           <li v-for="(conversation, index) in conversations"
               @click="show(conversation, index)"
@@ -17,8 +19,7 @@
             <div>
               <span class="profile">
                   <img v-bind:src="conversation.profileUrl">
-                  <a><span style="display: none;"
-                  >
+                  <a><span style="display: none;">
                       {{conversation.unreadCount>99?'99+':conversation.unreadCount}}
                   </span></a>
               </span>
@@ -61,7 +62,7 @@
       </div>
       <div class="chat-area" v-show="cur === -1"></div>
       <div class="chat-area" :class="{'chat-active': i===cur}" v-for="(info, i) in messageMap" v-show="i===cur">
-        <div @scroll.passive="scrollEvent"  >
+        <div @scroll.passive="scrollEvent">
           <ul>
             <li v-for="(message,index) in info.messages">
               <div v-if="index==0" class="more-info">
@@ -127,6 +128,9 @@
         </div>
       </div>
     </div>
+    <modals-container>
+      <!--<modal name="add-friend"></modal>-->
+    </modals-container>
   </div>
 
 </template>
@@ -135,6 +139,7 @@
   import storage from '../storage'
   import axios from '../request'
   import util from '../util'
+  import AddFriend from './AddFriend'
 
   export default {
     name: 'Chat',
@@ -150,27 +155,27 @@
         filepaths: [],
         message2send: '',
         chatPerson: {
-          notename:''
-        }
+          notename: ''
+        },
       }
     },
     created () {
       let user = storage.getUser()
       this.user = user
-      if(!user.conversations) {
+      if (!user.conversations) {
         axios.get('/conversation/list?userId=' + user.userId).then(res => {
           this.conversations = res.data
           this.buildMessageMap(res.data)
           storage.setConversation(res.data)
-          if(this.$route.params.idx != undefined) {
+          if (this.$route.params.idx != undefined) {
             let idx = parseInt(this.$route.params.idx)
             this.show(this.conversations[idx], idx)
           }
         })
-      }else {
+      } else {
         this.conversations = user.conversations
         this.buildMessageMap(user.conversations)
-        if(this.$route.params.idx != undefined) {
+        if (this.$route.params.idx != undefined) {
           let idx = parseInt(this.$route.params.idx)
           this.show(this.conversations[idx], idx)
         }
@@ -186,7 +191,7 @@
               data: 'ping'
             }
             let ping = JSON.stringify(req)
-            setTimeout(()=>{
+            setTimeout(() => {
               wsChat.send(ping)
             }, 15000)
             break
@@ -194,7 +199,7 @@
             if (resp.code == 60001) {
               util.toIndex()
             }
-            break;
+            break
           case 2:
             let message = JSON.parse(resp.data)
             for (let i in self.messageMap) {
@@ -205,18 +210,18 @@
                 break
               }
             }
-            break;
+            break
         }
 
       }
 
     },
     methods: {
-      diff(messages, index) {
-        let d = new Date(messages[index].createTime).getTime() - new Date(messages[index-1].createTime).getTime()
+      diff (messages, index) {
+        let d = new Date(messages[index].createTime).getTime() - new Date(messages[index - 1].createTime).getTime()
         return d > 300000
       },
-      buildMessageMap(conversations) {
+      buildMessageMap (conversations) {
         for (let conv of conversations) {
           let info = {}
           info.messages = []
@@ -226,7 +231,7 @@
         }
       },
       formatDate (c, fmt) {
-        return util.formatDate(c, fmt||'YYYY年M月D日  HH:mm')
+        return util.formatDate(c, fmt || 'YYYY年M月D日  HH:mm')
       },
       show (c, idx) {
         this.chatPerson = {
@@ -236,25 +241,26 @@
         }
         let conv = this.conversations[idx]
         // debugger
-        if(this.messageMap[idx].messages.length == 0) {
-          let url = '/message/prev?cid='+conv.conversationId+'&createtime='+encodeURIComponent(conv.createTime)+'&include=true'
+        if (this.messageMap[idx].messages.length == 0) {
+          let url = '/message/prev?cid=' + conv.conversationId + '&createtime=' + encodeURIComponent(conv.createTime) + '&include=true'
           axios.get(url).then(res => {
-            if(res.data) {
+            if (res.data) {
               this.messageMap[idx].messages = res.data
               this.cur = idx
               this.scroll2End()
             }
           })
-        }else {
+        } else {
           this.cur = idx
           this.scroll2End()
         }
       },
-      scroll2End() {
+      scroll2End () {
         this.$nextTick(() => {
           let chatArea = document.getElementsByClassName('chat-active')[0]
-          if(chatArea.scrollHeight)
-            chatArea.scrollTop = chatArea.scrollHeight;
+          if (chatArea.scrollHeight) {
+            chatArea.scrollTop = chatArea.scrollHeight
+          }
         })
       },
       menu (index, e) {
@@ -270,8 +276,8 @@
         if (this.delIdx >= 0) {
           let conv = this.conversations[this.delIdx]
           let data = {
-            "userId": this.user.userId,
-            "conversationId": conv.conversationId
+            'userId': this.user.userId,
+            'conversationId': conv.conversationId
           }
           axios.delete('/conversation/delete', {params: data}).then(res => {
             console.log('delete')
@@ -287,8 +293,8 @@
         this.hideMenu()
       },
       sendMsg: function () {
-        if(this.message2send && this.cur != -1) {
-          console.log('send message',this.message2send)
+        if (this.message2send && this.cur != -1) {
+          console.log('send message', this.message2send)
           let conv = this.conversations[this.cur]
           let message = {
             conversationId: conv.conversationId,
@@ -307,13 +313,21 @@
           this.message2send = ''
         }
       },
+      addFriend: function () {
+        this.$modal.show(AddFriend, {}, {
+          draggable: true,
+          width: 550,
+          height: 485,
+          clickToClose: false,
+        })
+      },
       propFile: function () {
 
       },
       clearMsg: function () {
 
       },
-      showMore: function() {
+      showMore: function () {
 
       }
     }
@@ -323,24 +337,25 @@
 <style scoped>
   /* 设置滚动条的样式 */
   /*::-webkit-scrollbar {*/
-    /*width: 7px;*/
-    /*margin-left:2px;*/
+  /*width: 7px;*/
+  /*margin-left:2px;*/
   /*}*/
 
   /* 滚动条滑块 */
   /*::-webkit-scrollbar-thumb {*/
-    /*border-radius: 6px;*/
-    /*background-color: #D2D2D2;*/
+  /*border-radius: 6px;*/
+  /*background-color: #D2D2D2;*/
   /*}*/
 
   /*::-webkit-scrollbar-thumb:window-inactive {*/
-    /*background:rgba(255,0,0,0.4);*/
-    /*display: none;*/
+  /*background:rgba(255,0,0,0.4);*/
+  /*display: none;*/
   /*}*/
   window-inactive {
-    background:rgba(255,0,0,0.4);
+    background: rgba(255, 0, 0, 0.4);
     display: none;
   }
+
   li, ul, div {
     margin: 0;
     padding: 0
@@ -376,8 +391,9 @@
     min-width: 300px;
     float: left;
     height: 100%;
-    background: #F5F5F5; /*url("/static/img/wechat.png") no-repeat center;
-    background-size: 93px;*/
+    background: #F5F5F5;
+    /*url("/static/img/wechat.png") no-repeat center;
+       background-size: 93px;*/
   }
 
   .search {
