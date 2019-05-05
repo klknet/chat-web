@@ -47,7 +47,8 @@
       return {
         users: [],
         username: '',
-        pickedUser: ''
+        pickedUser: '',
+        user: storage.getUser()
       }
     },
     created () {
@@ -68,15 +69,19 @@
       }, 1000),
       confirm () {
         console.log(this.pickedUser)
-        if (this.pickedUser) {
-          let user = storage.getUser()
-          let data = {
-            userId: user.userId,
-            destId: this.pickedUser,
-            note: ''
+        if(this.pickedUser == this.user.userId){
+          alert('Cannot add yourself')
+          return
+        }
+        for(let friend of this.user.friends) {
+          if(friend.userId == this.pickedUser) {
+            alert("already friends")
+            return;
           }
+        }
+        if (this.pickedUser) {
           var fd = new FormData()
-          fd.set('userId', user.userId)
+          fd.set('userId', this.user.userId)
           fd.set('destId', this.pickedUser)
           fd.set('note', '')
           axios.post('/relation/requestFriend', fd, {headers:{'Content-Type': 'multipart/form-data'}})
@@ -210,7 +215,7 @@
   }
 
   .cancel {
-
+    color: black;
   }
 
   .btn-group {

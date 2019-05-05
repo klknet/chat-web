@@ -162,7 +162,7 @@
     created () {
       let user = storage.getUser()
       this.user = user
-      if (!user.conversations) {
+      if (!user.conversations || user.conversations.length == 0) {
         axios.get('/conversation/list?userId=' + user.userId).then(res => {
           this.conversations = res.data
           this.buildMessageMap(res.data)
@@ -294,14 +294,15 @@
       },
       sendMsg: function () {
         if (this.message2send && this.cur != -1) {
-          console.log('send message', this.message2send)
+          // console.log('send message', this.message2send)
           let conv = this.conversations[this.cur]
           let message = {
             conversationId: conv.conversationId,
             userId: this.user.userId,
             destId: conv.destId,
             content: this.message2send,
-            type: 0
+            type: 0,
+            createTime: new Date().getTime()
           }
           let data = {
             type: 2,

@@ -9,14 +9,14 @@ let storage = {
   },
   getUser: function () {
     let user = window.user
-    if (user == null) {
-      user = localStorage.user
-      window.user = user
-    }
+    if (user != null)
+      return user
+    user = localStorage.user
     if (user == null) {
       util.toIndex()
     }
-    return JSON.parse(localStorage.user)
+    window.user = JSON.parse(user)
+    return window.user
   },
   removeUser: function() {
     localStorage.removeItem('user')

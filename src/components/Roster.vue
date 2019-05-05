@@ -1,7 +1,7 @@
 <template>
   <div class="roster">
     <div class="median" id="median">
-      <div class="search non-drag">
+      <div class="search">
         <div>
           <i class="fa fa-search"></i>
           <input class="search-input" type="text" placeholder="搜索"/>
@@ -39,17 +39,33 @@
       </div>
     </div>
     <div class="right">
-      <div class="new-friend" v-show="cur==-1">
-        <div>
-          <div class="title">
-            <span>新的朋友</span>
-          </div>
+      <div class="new-friend" v-show="cur==0">
+        <div class="title">
+          <span>新的朋友</span>
         </div>
         <div class="content">
-
+          <ul>
+            <li v-for="(friend, index) in newFriends">
+              <div class="friend-row">
+                <div>
+                  <img :src="friend.profileUrl" class="avatar"/>
+                </div>
+                <div>
+                  <span>{{friend.username}}</span>
+                  <span class="gray">{{friend.note}}</span>
+                </div>
+                <div>
+                  <span v-if="friend.status == 0">
+                    <button class="accept" @click="accept(friend.userId)">接受</button>
+                  </span>
+                  <span v-if="friend.status == 1" class="gray">已添加</span>
+                </div>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
-      <div class="friend-info" v-show="cur>=0">
+      <div class="friend-info" v-show="cur>0">
         <div class="info-chunk top">
           <div>
             <div>
@@ -107,6 +123,7 @@
         map: {},
         newFriendKey: 'new_friend_key',
         friend: {},
+        newFriends: [],
       }
     },
     created () {
@@ -121,6 +138,9 @@
           this.map[friends[i].userId] = li_index++
         }
       }
+      axios.get('/relation/requestList?userId=' + user.userId).then(res => {
+        this.newFriends = res.data
+      })
 
     },
     methods: {
@@ -137,7 +157,6 @@
         var conversations = storage.getConversation()
         for (let i in conversations) {
           if (conversations[i].destId == destId) {
-            console.log('已存在的会话')
             this.$router.push({name: 'Chat', params: {idx: i}})
             vm.$emit('navIdx', 0)
             return
@@ -152,7 +171,20 @@
           this.$router.push({name: 'Chat', params: {idx: '0'}})
           vm.$emit('navIdx', 0)
         })
-      }
+      },
+      accept (destId) {
+        let df = new FormData()
+        df.set('userId', this.user.userId)
+        df.set('destId', destId)
+        axios.post('/relation/agreeRequest', df, {headers:{'Content-Type': 'multipart/form-data'}}).then(res=>{
+          for(let friend in this.newFriends){
+            if(friend.userId == destId) {
+              friend.status = 1
+              break
+            }
+          }
+        })
+      },
     }
   }
 </script>
@@ -194,8 +226,9 @@
     min-width: 300px;
     float: left;
     height: 100%;
-    background: #F5F5F5;  /*url("/static/img/wechat.png") no-repeat center;
-    background-size: 93px;*/
+    background: #F5F5F5;
+    /*url("/static/img/wechat.png") no-repeat center;
+      background-size: 93px;*/
   }
 
   .search {
@@ -280,6 +313,10 @@
     width: 35px;
   }
 
+  .new-friend .avatar {
+    width: 50px;
+  }
+
   .friend .notation {
     padding-left: 8px;
     cursor: default;
@@ -345,5 +382,60 @@
   .detail-row {
     margin-bottom: 15px;
   }
+
+  .title {
+    font-size: 1.3em;
+    height: 60px;
+    font-weight: bold;
+    line-height: 70px;
+    border-bottom: solid 1px #e7e7e7;
+    padding-left: 20px;
+  }
+
+  .content {
+    margin: 15px 85px;
+
+  }
+
+  .content li {
+    border-bottom: solid 1px #e7e7e7;
+    padding-bottom: 15px;
+  }
+
+  .friend-row {
+    display: flex;
+  }
+
+  .friend-row > div:nth-child(2) {
+    padding: 3px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .friend-row > div:nth-child(3) {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+
+  .friend-row .gray {
+    color: #B999A9;
+    font-size: 12px;
+  }
+
+  .accept {
+    outline: none;
+    border: solid 1px #e7e7e7;
+    color: white;
+    background-color: #1AAD19;
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
+  .accept:hover {
+    background-color: #129611;
+  }
+
 
 </style>
