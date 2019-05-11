@@ -61,7 +61,8 @@
         <span>{{chatPerson.notename}}</span>
       </div>
       <div class="chat-area" v-show="cur === -1"></div>
-      <div class="chat-area" :class="{'chat-active': i===cur}" v-for="(info, i) in messageMap" v-show="i===cur">
+      <div class="chat-area" :class="{'chat-active': i===cur}" v-for="(info, i) in messageMap"
+           v-show="cur!= -1 && info.conversationId===conversations[cur].conversationId">
         <div @scroll.passive="scrollEvent">
           <ul>
             <li v-for="(message,index) in info.messages">
@@ -162,24 +163,15 @@
     created () {
       let user = storage.getUser()
       this.user = user
-      if (!user.conversations || user.conversations.length == 0) {
-        axios.get('/conversation/list?userId=' + user.userId).then(res => {
-          this.conversations = res.data
-          this.buildMessageMap(res.data)
-          storage.setConversation(res.data)
-          if (this.$route.params.idx != undefined) {
-            let idx = parseInt(this.$route.params.idx)
-            this.show(this.conversations[idx], idx)
-          }
-        })
-      } else {
-        this.conversations = user.conversations
-        this.buildMessageMap(user.conversations)
+      axios.get('/conversation/list?userId=' + user.userId).then(res => {
+        this.conversations = res.data
+        this.buildMessageMap(res.data)
+        storage.setConversation(res.data)
         if (this.$route.params.idx != undefined) {
           let idx = parseInt(this.$route.params.idx)
           this.show(this.conversations[idx], idx)
         }
-      }
+      })
 
       let self = this
       window.wsChat.onmessage = (evt) => {
@@ -206,8 +198,35 @@
               let info = self.messageMap[i]
               if (info.conversationId === message.conversationId) {
                 info.messages.push(message)
-                self.scroll2End()
+                if(self.cur != -1)
+                  self.scroll2End()
                 break
+              }
+            }
+            let send2me = (self.user.userId == message.userId)
+            if(!send2me) {
+              for (let i in self.conversations) {
+                let conv = self.conversations[i]
+                if (conv.destId == message.userId) {
+                  conv.updateTime = message.createTime
+                  conv.lastMsg = message.content
+                  conv.type = message.type
+                  if (i != self.cur) {
+                    self.conversations[i] = self.conversations[0]
+                    self.conversations[0] = conv
+                  }
+                }
+              }
+              if(Notification.permission == 'granted') {
+                self.notify(message)
+              }else if(Notification.permission == 'denied') {
+                console.log('user denied')
+              }else {
+                Notification.requestPermission().then(function (permission) {
+                  if(permission == 'granted') {
+                    self.notify(message)
+                  }
+                })
               }
             }
             break
@@ -217,6 +236,16 @@
 
     },
     methods: {
+      notify(message) {
+        let notify = new Notification('收到一条新消息', {
+          body: message.content,
+          tag: 'newMessage',
+
+        })
+        setTimeout(function(){
+          notify.close()
+        }, 8000)
+      },
       diff (messages, index) {
         let d = new Date(messages[index].createTime).getTime() - new Date(messages[index - 1].createTime).getTime()
         return d > 300000
@@ -226,6 +255,7 @@
           let info = {}
           info.messages = []
           info.showMore = false
+          info.requested = false
           info.conversationId = conv.conversationId
           this.messageMap.push(info)
         }
@@ -241,18 +271,24 @@
         }
         let conv = this.conversations[idx]
         // debugger
-        if (this.messageMap[idx].messages.length == 0) {
-          let url = '/message/prev?cid=' + conv.conversationId + '&createtime=' + encodeURIComponent(conv.createTime) + '&include=true'
-          axios.get(url).then(res => {
-            if (res.data) {
-              this.messageMap[idx].messages = res.data
+        for (let info of this.messageMap) {
+          if(info.conversationId == conv.conversationId) {
+            if (!info.requested) {
+              let url = '/message/prev?cid=' + conv.conversationId + '&createtime=' + encodeURIComponent(conv.createTime) + '&include=true'
+              axios.get(url).then(res => {
+                if (res.data) {
+                  info.messages = res.data
+                  this.cur = idx
+                  this.scroll2End()
+                  info.requested = true
+                }
+              })
+            } else {
               this.cur = idx
               this.scroll2End()
             }
-          })
-        } else {
-          this.cur = idx
-          this.scroll2End()
+            break
+          }
         }
       },
       scroll2End () {
@@ -296,13 +332,14 @@
         if (this.message2send && this.cur != -1) {
           // console.log('send message', this.message2send)
           let conv = this.conversations[this.cur]
+          console.log(conv.destId)
           let message = {
             conversationId: conv.conversationId,
             userId: this.user.userId,
             destId: conv.destId,
             content: this.message2send,
             type: 0,
-            createTime: new Date().getTime()
+            createTime: new Date().getTime(),
           }
           let data = {
             type: 2,
@@ -311,7 +348,22 @@
           }
           let text = JSON.stringify(data)
           window.wsChat.send(text)
+          this.updateConversation(this.cur, message)
           this.message2send = ''
+        }
+      },
+      updateConversation(idx, message) {
+        let conv = this.conversations[idx]
+        conv.lastMsg = message.content
+        conv.updateTime = new Date()
+        conv.type = message.type
+        if(this.conversations.length > 0) {
+          this.conversations[idx] = this.conversations[0]
+          this.conversations[0] = conv
+          this.cur = 0
+          let temp = this.messageMap[idx]
+          this.messageMap[idx] = this.messageMap[0]
+          this.messageMap[0] = temp
         }
       },
       addFriend: function () {

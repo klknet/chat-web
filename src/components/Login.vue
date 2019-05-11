@@ -58,7 +58,7 @@
         axios.post('/user/login', fd, {
           headers: {
             token: '6c766178-4eef-11e9-89c1-40a3cc5c760e',
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/x-www-form-urlencoded'
           }
         }).then(res => {
           if (res.data) {

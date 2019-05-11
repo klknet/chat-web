@@ -5,7 +5,7 @@
         <div>
           <i class="fa fa-search"></i>
           <input class="search-input" type="text" placeholder="搜索"/>
-          <span class="add-friend">+</span>
+          <span class="add-friend" @click="addFriend">+</span>
         </div>
       </div>
       <div class="friend">
@@ -105,6 +105,9 @@
         </div>
       </div>
     </div>
+    <modals-container>
+      <!--<modal name="add-friend"></modal>-->
+    </modals-container>
   </div>
 </template>
 
@@ -113,6 +116,7 @@
   import util from '../util'
   import storage from '../storage'
   import vm from '@/event'
+  import AddFriend from './AddFriend'
 
   export default {
     name: 'Roster',
@@ -176,13 +180,21 @@
         let df = new FormData()
         df.set('userId', this.user.userId)
         df.set('destId', destId)
-        axios.post('/relation/agreeRequest', df, {headers:{'Content-Type': 'multipart/form-data'}}).then(res=>{
+        axios.post('/relation/agreeRequest', df, {headers:{'Content-Type': 'application/x-www-form-urlencoded'}}).then(res=>{
           for(let friend in this.newFriends){
             if(friend.userId == destId) {
               friend.status = 1
               break
             }
           }
+        })
+      },
+      addFriend: function () {
+        this.$modal.show(AddFriend, {}, {
+          draggable: true,
+          width: 550,
+          height: 485,
+          clickToClose: false,
         })
       },
     }
