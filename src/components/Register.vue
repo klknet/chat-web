@@ -14,6 +14,18 @@
       </div>
       <div class="form-group">
         <div class="input">
+          <label>手机号</label>
+          <input type="text" class="form-control" v-model="user.cellphone"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="input">
+          <label>邮箱</label>
+          <input type="text" class="form-control" v-model="user.mailbox"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="input">
           <label>昵称</label>
           <input type="text" class="form-control" v-model="user.nickname"/>
         </div>
@@ -54,6 +66,8 @@
         user: {
           username: '',
           nickname: '',
+          cellphone: '',
+          mailbox:'',
           rawPwd: '',
           gender: '1',
           city: ''
@@ -68,6 +82,14 @@
         }
         if(!this.user.nickname) {
           alert("昵称不能为空")
+          return;
+        }
+        if(!this.user.cellphone) {
+          alert("手机号不能为空")
+          return;
+        }
+        if(!this.user.mailbox) {
+          alert("邮箱不能为空")
           return;
         }
         if(!this.user.rawPwd) {

@@ -73,10 +73,12 @@
           alert('Cannot add yourself')
           return
         }
-        for(let friend of this.user.friends) {
-          if(friend.userId == this.pickedUser) {
-            alert("already friends")
-            return;
+        if(this.user.friends && this.user.friends.length > 0) {
+          for(let friend of this.user.friends) {
+            if(friend.userId == this.pickedUser) {
+              alert("already friends")
+              return;
+            }
           }
         }
         if (this.pickedUser) {
