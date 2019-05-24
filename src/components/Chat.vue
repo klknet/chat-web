@@ -317,8 +317,8 @@
           }
           axios.delete('/conversation/delete', {params: data}).then(res => {
             console.log('delete')
-            this.conversations.splice(this.delIdx, 1)
-            storage.spliceConversation(this.delIdx)
+            // this.conversations.splice(this.delIdx, 1)
+            storage.spliceConversation(this.delIdx, 1)
           })
         }
       },
@@ -359,11 +359,15 @@
         conv.type = message.type
         if(this.conversations.length > 0) {
           this.conversations[idx] = this.conversations[0]
-          this.conversations[0] = conv
+          this.conversations.splice(idx, 1)
+          this.conversations.unshift(conv)
+          // this.conversations[0] = conv
           this.cur = 0
           let temp = this.messageMap[idx]
-          this.messageMap[idx] = this.messageMap[0]
-          this.messageMap[0] = temp
+          this.messageMap.splice(idx, 1)
+          this.messageMap.unshift(temp)
+          // this.messageMap[idx] = this.messageMap[0]
+          // this.messageMap[0] = temp
         }
       },
       addFriend: function () {
@@ -499,6 +503,11 @@
 
   .profile {
     float: left;
+  }
+
+  .conversations {
+    height: calc(100% - 65px);
+    overflow-y: scroll;
   }
 
   .conversations .nickname {

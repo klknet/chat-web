@@ -298,6 +298,11 @@
     color: #999999;
   }
 
+  .friend {
+    height: calc(100% - 65px);
+    overflow-y: scroll;
+  }
+
   .friend .first {
     font-size: 0.7em;
     font-weight: 600;
