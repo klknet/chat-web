@@ -171,7 +171,7 @@
         fd.set('userId', this.user.userId)
         axios.post('conversation/build', fd,
           {headers: {'Content-Type': 'application/x-www-form-urlencoded'}}).then(res => {
-          storage.removeConversation()
+          // storage.removeConversation()
           this.$router.push({name: 'Chat', params: {idx: '0'}})
           vm.$emit('navIdx', 0)
         })
@@ -202,6 +202,9 @@
 </script>
 
 <style scoped>
+  ::-webkit-scrollbar {
+    width: 0;
+  }
   .roster {
     height: 100%;
   }

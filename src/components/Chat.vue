@@ -62,7 +62,7 @@
       </div>
       <div class="chat-area" v-show="cur === -1"></div>
       <div class="chat-area" :class="{'chat-active': i===cur}" v-for="(info, i) in messageMap"
-           v-show="cur!= -1 && info.conversationId===conversations[cur].conversationId">
+           v-show="cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId">
         <div @scroll.passive="scrollEvent">
           <ul>
             <li v-for="(message,index) in info.messages">
@@ -163,16 +163,7 @@
     created () {
       let user = storage.getUser()
       this.user = user
-      axios.get('/conversation/list?userId=' + user.userId).then(res => {
-        this.conversations = res.data
-        this.buildMessageMap(res.data)
-        storage.setConversation(res.data)
-        if (this.$route.params.idx != undefined) {
-          let idx = parseInt(this.$route.params.idx)
-          this.show(this.conversations[idx], idx)
-        }
-      })
-
+      this.getConversation(user)
       let self = this
       window.wsChat.onmessage = (evt) => {
         let resp = JSON.parse(evt.data)
@@ -194,17 +185,25 @@
             break
           case 2:
             let message = JSON.parse(resp.data)
+            let exist = false
             for (let i in self.messageMap) {
               let info = self.messageMap[i]
               if (info.conversationId === message.conversationId) {
+                exist = true
                 info.messages.push(message)
-                if(self.cur != -1)
+                if (self.cur != -1) {
                   self.scroll2End()
+                }
                 break
               }
             }
+            //不存在的会话，新创建一个会话
+            if (!exist) {
+              self.getConversation(self.user)
+              // self.cur = 0
+            }
             let send2me = (self.user.userId == message.userId)
-            if(!send2me) {
+            if (!send2me) {
               for (let i in self.conversations) {
                 let conv = self.conversations[i]
                 if (conv.destId == message.userId) {
@@ -217,13 +216,13 @@
                   }
                 }
               }
-              if(Notification.permission == 'granted') {
+              if (Notification.permission == 'granted') {
                 self.notify(message)
-              }else if(Notification.permission == 'denied') {
+              } else if (Notification.permission == 'denied') {
                 console.log('user denied')
-              }else {
+              } else {
                 Notification.requestPermission().then(function (permission) {
-                  if(permission == 'granted') {
+                  if (permission == 'granted') {
                     self.notify(message)
                   }
                 })
@@ -236,19 +235,30 @@
 
     },
     methods: {
-      notify(message) {
+      notify (message) {
         let notify = new Notification('收到一条新消息', {
           body: message.content,
           tag: 'newMessage',
 
         })
-        setTimeout(function(){
+        setTimeout(function () {
           notify.close()
         }, 8000)
       },
       diff (messages, index) {
         let d = new Date(messages[index].createTime).getTime() - new Date(messages[index - 1].createTime).getTime()
         return d > 300000
+      },
+      getConversation(user) {
+        axios.get('/conversation/list?userId=' + user.userId).then(res => {
+          this.conversations = res.data
+          this.buildMessageMap(res.data)
+          storage.setConversation(res.data)
+          if (this.$route.params.idx != undefined) {
+            let idx = parseInt(this.$route.params.idx)
+            this.show(this.conversations[idx], idx)
+          }
+        })
       },
       buildMessageMap (conversations) {
         for (let conv of conversations) {
@@ -258,6 +268,15 @@
           info.requested = false
           info.conversationId = conv.conversationId
           this.messageMap.push(info)
+        }
+      },
+      removeConversation(convId) {
+        for (let i in this.messageMap) {
+          let info = this.messageMap[i]
+          if (info.conversationId === convId) {
+            this.messageMap.splice(i, 1)
+            break
+          }
         }
       },
       formatDate (c, fmt) {
@@ -272,7 +291,7 @@
         let conv = this.conversations[idx]
         // debugger
         for (let info of this.messageMap) {
-          if(info.conversationId == conv.conversationId) {
+          if (info.conversationId == conv.conversationId) {
             if (!info.requested) {
               let url = '/message/prev?cid=' + conv.conversationId + '&createtime=' + encodeURIComponent(conv.createTime) + '&include=true'
               axios.get(url).then(res => {
@@ -308,7 +327,6 @@
         }
       },
       remove () {
-        // debugger
         if (this.delIdx >= 0) {
           let conv = this.conversations[this.delIdx]
           let data = {
@@ -316,9 +334,14 @@
             'conversationId': conv.conversationId
           }
           axios.delete('/conversation/delete', {params: data}).then(res => {
-            console.log('delete')
-            // this.conversations.splice(this.delIdx, 1)
             storage.spliceConversation(this.delIdx, 1)
+            this.removeConversation(conv.conversationId)
+            if (this.delIdx<this.cur) {
+              this.cur -= 1
+            }
+            if(this.conversations.length == 0){
+              this.cur = -1
+            }
           })
         }
       },
@@ -352,12 +375,12 @@
           this.message2send = ''
         }
       },
-      updateConversation(idx, message) {
+      updateConversation (idx, message) {
         let conv = this.conversations[idx]
         conv.lastMsg = message.content
         conv.updateTime = new Date()
         conv.type = message.type
-        if(this.conversations.length > 0) {
+        if (this.conversations.length > 0) {
           this.conversations[idx] = this.conversations[0]
           this.conversations.splice(idx, 1)
           this.conversations.unshift(conv)
@@ -378,6 +401,14 @@
           clickToClose: false,
         })
       },
+      showScroll: function (event) {
+        let target = event.srcElement
+        target.style.overflowY = 'scroll'
+      },
+      hideScroll: function (event) {
+        let target = event.srcElement
+        target.style.overflow = 'hidden'
+      },
       propFile: function () {
 
       },
@@ -392,26 +423,30 @@
 </script>
 
 <style scoped>
-  /* 设置滚动条的样式 */
-  /*::-webkit-scrollbar {*/
-  /*width: 7px;*/
-  /*margin-left:2px;*/
-  /*}*/
+  /*设置滚动条的样式*/
+  ::-webkit-scrollbar {
+    width: 0;
+  }
 
-  /* 滚动条滑块 */
-  /*::-webkit-scrollbar-thumb {*/
-  /*border-radius: 6px;*/
-  /*background-color: #D2D2D2;*/
-  /*}*/
+  scrollbar {
+    width: 0;
+  }
 
-  /*::-webkit-scrollbar-thumb:window-inactive {*/
-  /*background:rgba(255,0,0,0.4);*/
-  /*display: none;*/
-  /*}*/
-  window-inactive {
+  /*滚动条滑块*/
+  ::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: #D2D2D2;
+  }
+
+  ::-webkit-scrollbar-thumb:window-inactive {
     background: rgba(255, 0, 0, 0.4);
     display: none;
   }
+
+  /*window-inactive {*/
+    /*background: rgba(255, 0, 0, 0.4);*/
+    /*display: none;*/
+  /*}*/
 
   li, ul, div {
     margin: 0;
