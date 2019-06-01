@@ -9,31 +9,33 @@
         </div>
       </div>
       <div class="friend">
-        <div class="contact-group">
-          <div class="group-title first">
-            <span>新的朋友</span>
+        <div class="inner">
+          <div class="contact-group">
+            <div class="group-title first">
+              <span>新的朋友</span>
+            </div>
+            <div class="group-content">
+              <ul>
+                <li @click="select(map[newFriendKey], newFriendKey)" :class="{active: cur === map[newFriendKey]}">
+                  <img class="avatar" src="/web/static/img/newfriend.png"/>
+                  <span class="notation">新的朋友</span>
+                </li>
+              </ul>
+            </div>
           </div>
-          <div class="group-content">
-            <ul>
-              <li @click="select(map[newFriendKey], newFriendKey)" :class="{active: cur === map[newFriendKey]}">
-                <img class="avatar" src="/web/static/img/newfriend.png"/>
-                <span class="notation">新的朋友</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div class="contact-group friend-group" v-for="(value,key) in user.groupFriend">
-          <div class="group-title">
-            <span>{{key}}</span>
-          </div>
-          <div class="group-content">
-            <ul>
-              <li v-for="(friend, index) in value" @click="select(map[friend.userId], friend.userId)"
-                  :class="{active: cur === map[friend.userId]}">
-                <img :src="friend.profileUrl" class="avatar"/>
-                <span class="notation">{{friend.remark}}</span>
-              </li>
-            </ul>
+          <div class="contact-group friend-group" v-for="(value) in user.groupFriend">
+            <div class="group-title">
+              <span>{{value.letter}}</span>
+            </div>
+            <div class="group-content">
+              <ul>
+                <li v-for="(friend) in value.groups" @click="select(map[friend.userId], friend.userId)"
+                    :class="{active: cur === map[friend.userId]}">
+                  <img :src="friend.profileUrl" class="avatar"/>
+                  <span class="notation">{{friend.remark}}</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -136,8 +138,8 @@
       let li_index = 0
       this.map[this.newFriendKey] = li_index++
       let friendGroup = this.user.groupFriend
-      for (let group in friendGroup) {
-        let friends = friendGroup[group]
+      for (let i in friendGroup) {
+        let friends = friendGroup[i].groups
         for (let i in friends) {
           this.map[friends[i].userId] = li_index++
         }
@@ -303,7 +305,13 @@
 
   .friend {
     height: calc(100% - 65px);
+    width: 270px;
+    overflow-x: hidden;
     overflow-y: scroll;
+  }
+
+  .inner {
+    width: 250px;
   }
 
   .friend .first {

@@ -33,7 +33,15 @@ export default {
     if(user.friends) {
       user.friends.forEach(f => f.firstLetter = pinyin.getCamelChars(f.remark).charAt(0))
       let groupFriend = lodash.groupBy(user.friends, friend => friend['firstLetter'])
-      user.groupFriend = groupFriend
+      let friends = []
+      for (let letter in groupFriend) {
+        let friend = {letter: letter, groups: groupFriend[letter]}
+        friends.push(friend)
+      }
+      friends.sort((obj1, obj2) => {
+        return obj1.letter.charCodeAt()-obj2.letter.charCodeAt()
+      })
+      user.groupFriend = friends
     }
 
   },

@@ -8,22 +8,24 @@
           <span class="add-friend" @click="addFriend">+</span>
         </div>
       </div>
-      <div class="conversations">
-        <router-view>
-        </router-view>
-        <ul>
-          <li v-for="(conversation, index) in conversations"
-              @click="show(conversation, index)"
-              @contextmenu.prevent="menu(index, $event)"
-              v-bind:class="{active: cur===index}">
-            <div>
+      <div class="conversations"
+           @mouseenter="convEnter"
+           @mouseleave="convLeave" @scroll="convScroll">
+        <div :class="{scrollbar: convShow}" :style="convStyle"></div>
+        <div class="inner">
+          <ul>
+            <li v-for="(conversation, index) in conversations"
+                @click="show(conversation, index)"
+                @contextmenu.prevent="menu(index, $event)"
+                v-bind:class="{active: cur===index}">
+              <div>
               <span class="profile">
                   <img v-bind:src="conversation.profileUrl">
                   <a><span style="display: none;">
                       {{conversation.unreadCount>99?'99+':conversation.unreadCount}}
                   </span></a>
               </span>
-              <span>
+                <span>
                   <span class="nickname">{{conversation.notename}}</span>
                   <span class="last-date">{{formatDate(conversation.updateTime, 'YY/M/D')}}</span>
                   <span class="last-msg">
@@ -37,9 +39,10 @@
                       </template>
                   </span>
               </span>
-            </div>
-          </li>
-        </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
       <div class="conv-menu" :style="menuStyle">
         <ul>
@@ -58,12 +61,14 @@
 
     <div class="right">
       <div class="chat-person">
-        <span>{{chatPerson.notename}}</span>
+        <span>{{cur == -1 ? '' : chatPerson.notename}}</span>
       </div>
       <div class="chat-area" v-show="cur === -1"></div>
       <div class="chat-area" :class="{'chat-active': i===cur}" v-for="(info, i) in messageMap"
-           v-show="cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId">
-        <div @scroll.passive="scrollEvent">
+           v-show="cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId"
+           @mouseenter="chatEnter" @mouseleave="chatLeave" @scroll.passive="chatScroll" >
+        <div class="scrollbar" v-show="chatShow" :style="chatStyle" style="height: 45px;"></div>
+        <div @scroll.passive="scrollEvent" class="chat-inner">
           <ul>
             <li v-for="(message,index) in info.messages">
               <div v-if="index==0" class="more-info">
@@ -141,6 +146,7 @@
   import axios from '../request'
   import util from '../util'
   import AddFriend from './AddFriend'
+  import lodash from 'lodash'
 
   export default {
     name: 'Chat',
@@ -152,12 +158,27 @@
         messageMap: [],
         cur: -1,
         delIdx: -1,
+        convShow: false,
+        convStyle:{
+          top: '0px',
+        },
+        chatShow: false,
+        chatStyle: {
+          top: '0px',
+        },
         menuStyle: {},
         filepaths: [],
         message2send: '',
         chatPerson: {
           notename: ''
         },
+      }
+    },
+    activated() {
+      //组件切换时触发
+      if (this.$route.params.idx != undefined) {
+        let idx = parseInt(this.$route.params.idx)
+        this.show(this.conversations[idx], idx)
       }
     },
     created () {
@@ -292,6 +313,7 @@
         // debugger
         for (let info of this.messageMap) {
           if (info.conversationId == conv.conversationId) {
+            this.chatStyle.top = '0'
             if (!info.requested) {
               let url = '/message/prev?cid=' + conv.conversationId + '&createtime=' + encodeURIComponent(conv.createTime) + '&include=true'
               axios.get(url).then(res => {
@@ -384,13 +406,10 @@
           this.conversations[idx] = this.conversations[0]
           this.conversations.splice(idx, 1)
           this.conversations.unshift(conv)
-          // this.conversations[0] = conv
           this.cur = 0
           let temp = this.messageMap[idx]
           this.messageMap.splice(idx, 1)
           this.messageMap.unshift(temp)
-          // this.messageMap[idx] = this.messageMap[0]
-          // this.messageMap[0] = temp
         }
       },
       addFriend: function () {
@@ -401,14 +420,62 @@
           clickToClose: false,
         })
       },
-      showScroll: function (event) {
+      convEnter: function (event) {
         let target = event.srcElement
-        target.style.overflowY = 'scroll'
+        let inner = target.lastChild
+        if(inner.clientHeight > target.clientHeight)
+          this.convShow = true
       },
-      hideScroll: function (event) {
+      convLeave: function (event) {
+        this.convShow = false
+      },
+      convScroll: lodash.debounce(function(event) {
         let target = event.srcElement
-        target.style.overflow = 'hidden'
+        let ul = target.lastChild
+        let h = target.clientHeight
+        let scrollTop = target.scrollTop
+        let ulHeight = ul.clientHeight-h
+        let rate = scrollTop/ulHeight
+        let offset = rate*h
+        // console.log(event)
+        // console.log('clientHeight='+h+",scrollTop="+scrollTop+',rate='+rate+',offset='+offset)
+        let cur = Math.min(scrollTop+offset, ul.clientHeight-17)
+        console.log(cur)
+        this.convStyle.top = cur+'px'
+      }, 50),
+      chatEnter: function(event) {
+        let target = event.srcElement
+        let inner = target.lastChild
+        if(inner.clientHeight > target.clientHeight)
+          this.chatShow = true
       },
+      chatLeave: function(event) {
+        this.chatShow = false
+      },
+      chatScroll: lodash.debounce(function(event) {
+        let target = event.srcElement
+        let inner = target.lastChild
+        let bar = target.firstChild
+        console.log(event)
+        let h = target.clientHeight
+        let scrollTop = target.scrollTop
+        let innerHeight = inner.clientHeight-h
+        let rate = scrollTop/innerHeight
+        let offset = rate*h
+        let cur = Math.floor(Math.min(scrollTop+offset, inner.clientHeight-45))
+        // let prev = parseInt(bar.style.top.replace('px', ''))
+        // let up = prev>cur
+        // console.log('prev='+prev)
+        // console.log(cur)
+        // while (prev != cur) {
+        //   if (up)
+        //     prev -=1
+        //   else
+        //     prev += 1
+        //   bar.style.top = prev+'px'
+        // }
+        bar.style.top = cur+'px'
+      }, 50),
       propFile: function () {
 
       },
@@ -428,25 +495,11 @@
     width: 0;
   }
 
-  scrollbar {
-    width: 0;
-  }
-
-  /*滚动条滑块*/
-  ::-webkit-scrollbar-thumb {
-    border-radius: 6px;
-    background-color: #D2D2D2;
-  }
-
   ::-webkit-scrollbar-thumb:window-inactive {
     background: rgba(255, 0, 0, 0.4);
     display: none;
   }
 
-  /*window-inactive {*/
-    /*background: rgba(255, 0, 0, 0.4);*/
-    /*display: none;*/
-  /*}*/
 
   li, ul, div {
     margin: 0;
@@ -473,9 +526,10 @@
 
   .median {
     width: 250px;
-    background-color: #EEEAE8;
+    background: linear-gradient(to bottom, #E5E5E6, #EBE8E7, #F0F0F0);
     float: left;
     height: 100%;
+    overflow: hidden;
   }
 
   .right {
@@ -484,6 +538,7 @@
     float: left;
     height: 100%;
     background: #F5F5F5;
+    overflow:hidden;
     /*url("/static/img/wechat.png") no-repeat center;
        background-size: 93px;*/
   }
@@ -542,7 +597,26 @@
 
   .conversations {
     height: calc(100% - 65px);
+    width: 270px;
     overflow-y: scroll;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  .scrollbar {
+    width:7px;
+    height: 18px;
+    background-color: #D2D2D2;
+    position: absolute;
+    right: 20px;
+    border: solid 0.5px #D2D2D2;
+    border-radius: 9px;
+    top: 0;
+    z-index: 999;
+  }
+
+  .inner {
+    width: 250px;
   }
 
   .conversations .nickname {
@@ -608,7 +682,7 @@
   }
 
   .conversations li.active {
-    background-color: #BCBDBE;
+    background: linear-gradient(to right, #C8C6C6, #C3C3C3, #CAC7C6);
   }
 
   .conv-menu {
@@ -663,9 +737,12 @@
 
   .chat-area {
     height: calc(100% - 146px - 60px);
-    overflow-y: auto;
+    width: calc(100% + 20px);
+    overflow-y: scroll;
     font-size: 14px;
+    position: relative;
   }
+
 
   .chat-area .more-info span {
     color: #2C90FC;
@@ -679,7 +756,7 @@
   }
 
   .chat-area li {
-    padding: 8px 30px;
+    padding: 8px 50px 8px 30px;
   }
 
   .chat-area .oldest-time-area {
