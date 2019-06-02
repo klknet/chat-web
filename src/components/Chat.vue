@@ -203,6 +203,15 @@
             if (resp.code == 60001) {
               util.toIndex()
             }
+            if (resp.code == 80001) {
+              window.wsChat.close()
+              let time = new Date()
+              time.getHours()
+              time.getMinutes()
+              let f = time.getHours()+":"+time.getMinutes()
+              alert("当前账号于"+f+"在其它设备上登录。此客户端已退出登录。")
+              storage.removeUser()
+            }
             break
           case 2:
             let message = JSON.parse(resp.data)
@@ -463,17 +472,6 @@
         let rate = scrollTop/innerHeight
         let offset = rate*h
         let cur = Math.floor(Math.min(scrollTop+offset, inner.clientHeight-45))
-        // let prev = parseInt(bar.style.top.replace('px', ''))
-        // let up = prev>cur
-        // console.log('prev='+prev)
-        // console.log(cur)
-        // while (prev != cur) {
-        //   if (up)
-        //     prev -=1
-        //   else
-        //     prev += 1
-        //   bar.style.top = prev+'px'
-        // }
         bar.style.top = cur+'px'
       }, 50),
       propFile: function () {
