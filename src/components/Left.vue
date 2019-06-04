@@ -55,6 +55,7 @@
       vm.$on('navIdx', (data) => {
         this.navIndex = data
       })
+
     },
     methods: {
       format (m, i) {

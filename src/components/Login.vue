@@ -27,9 +27,9 @@
 </template>
 
 <script>
-  import axios from '../request'
   import storage from '../storage'
   import util from '../util'
+  import userRequest from '../user'
 
   export default {
     name: 'Login',
@@ -52,15 +52,7 @@
           alert("密码不能为空")
           return;
         }
-        var fd = new FormData()
-        fd.set('unique', this.username)
-        fd.set('pwd', Buffer.from('konglk' + this.pwd).toString('base64'))
-        axios.post('/user/login', fd, {
-          headers: {
-            token: '6c766178-4eef-11e9-89c1-40a3cc5c760e',
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        }).then(res => {
+        userRequest.login(this.username, this.pwd).then(res => {
           if (res.data) {
             let user = res.data
             util.groupFriend(user)

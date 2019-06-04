@@ -37,9 +37,10 @@
 </template>
 
 <script>
-  import axios from '../request'
   import lodash from 'lodash'
   import storage from '../storage'
+  import util from '../util'
+  import userRequest from '../user'
 
   export default {
     name: 'AddFriend',
@@ -59,37 +60,26 @@
         if (!this.username) {
           return
         }
-        axios.get('/user/find?username=' + this.username, {
-          headers: {
-            token: '6c766178-4eef-11e9-89c1-40a3cc5c760e'
-          }
-        }).then(res => {
+        userRequest.findUsers(this.username).then(res => {
           this.users = res.data
         })
       }, 1000),
       confirm () {
         console.log(this.pickedUser)
-        if(this.pickedUser == this.user.userId){
+        if (this.pickedUser == this.user.userId) {
           alert('Cannot add yourself')
           return
         }
-        if(this.user.friends && this.user.friends.length > 0) {
-          for(let friend of this.user.friends) {
-            if(friend.userId == this.pickedUser) {
-              alert("already friends")
-              return;
+        if (this.user.friends && this.user.friends.length > 0) {
+          for (let friend of this.user.friends) {
+            if (friend.userId == this.pickedUser) {
+              alert('already friends')
+              return
             }
           }
         }
         if (this.pickedUser) {
-          var fd = new FormData()
-          fd.set('userId', this.user.userId)
-          fd.set('destId', this.pickedUser)
-          fd.set('note', '')
-          axios.post('/relation/requestFriend', fd, {headers:{'Content-Type': 'multipart/form-data'}})
-            .then(res => {
-
-            })
+          userRequest.requestFriend(this.user.userId, this.pickedUser)
           this.$modal.hide(this.$parent.name)
         }
       },

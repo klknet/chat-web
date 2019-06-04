@@ -22,6 +22,7 @@
   import Left from '@/components/Left'
   import storage from '../storage'
   import config from '../config'
+  import ws from '../websocket'
 
   export default {
     name: 'MainChat',
@@ -39,7 +40,11 @@
       const wsChat = new WebSocket(config.ws)
       window.wsChat = wsChat
       wsChat.onopen = () => {
+        ws.ping()
         this.authentication()
+      }
+      wsChat.onclose = (evt) => {
+        console.log("connection closed", wsChat.id)
       }
       this.$router.push({name: 'Chat'})
 

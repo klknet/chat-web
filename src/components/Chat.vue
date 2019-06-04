@@ -134,9 +134,8 @@
         </div>
       </div>
     </div>
-    <modals-container>
-      <!--<modal name="add-friend"></modal>-->
-    </modals-container>
+    <!--<modals-container>-->
+    <!--</modals-container>-->
   </div>
 
 </template>
@@ -144,9 +143,14 @@
 <script>
   import storage from '../storage'
   import axios from '../request'
+  import convRequest from '../conversation'
+  import msgRequest from '../message'
   import util from '../util'
   import AddFriend from './AddFriend'
+  import vm from '@/event'
   import lodash from 'lodash'
+  import userRequest from '../user'
+  import ws from '../websocket'
 
   export default {
     name: 'Chat',
@@ -176,7 +180,13 @@
     },
     activated() {
       //组件切换时触发
-      if (this.$route.params.idx != undefined) {
+      let params = this.$route.params
+      if (params.idx != undefined) {
+        if(params.conv != undefined) {
+          this.conversations.unshift(params.conv)
+          this.addConversation(params.conv)
+          storage.setConversation(this.conversations)
+        }
         let idx = parseInt(this.$route.params.idx)
         this.show(this.conversations[idx], idx)
       }
@@ -190,16 +200,10 @@
         let resp = JSON.parse(evt.data)
         switch (resp.type) {
           case 0:
-            let req = {
-              type: 0,
-              data: 'ping'
-            }
-            let ping = JSON.stringify(req)
-            setTimeout(() => {
-              wsChat.send(ping)
-            }, 15000)
+            ws.ping()
             break
           case 1:
+            console.log(resp)
             if (resp.code == 60001) {
               util.toIndex()
             }
@@ -211,6 +215,17 @@
               let f = time.getHours()+":"+time.getMinutes()
               alert("当前账号于"+f+"在其它设备上登录。此客户端已退出登录。")
               storage.removeUser()
+            }
+            if (resp.code == 80002) {
+              // userRequest.findById(this.user.userId).then(res => {
+              //   this.user = res.data
+              //   util.groupFriend(res.data)
+              //   storage.setUser(res.data)
+              // })
+              vm.$emit('freshFriend')
+            }
+            if (resp.code == 80003) {
+              vm.$emit('friendRequest', resp.data)
             }
             break
           case 2:
@@ -230,7 +245,6 @@
             //不存在的会话，新创建一个会话
             if (!exist) {
               self.getConversation(self.user)
-              // self.cur = 0
             }
             let send2me = (self.user.userId == message.userId)
             if (!send2me) {
@@ -248,9 +262,7 @@
               }
               if (Notification.permission == 'granted') {
                 self.notify(message)
-              } else if (Notification.permission == 'denied') {
-                console.log('user denied')
-              } else {
+              }  else {
                 Notification.requestPermission().then(function (permission) {
                   if (permission == 'granted') {
                     self.notify(message)
@@ -260,6 +272,7 @@
             }
             break
         }
+
 
       }
 
@@ -280,7 +293,7 @@
         return d > 300000
       },
       getConversation(user) {
-        axios.get('/conversation/list?userId=' + user.userId).then(res => {
+        convRequest.getConversation(user.userId).then(res => {
           this.conversations = res.data
           this.buildMessageMap(res.data)
           storage.setConversation(res.data)
@@ -309,6 +322,14 @@
           }
         }
       },
+      addConversation(conv) {
+        let info = {}
+        info.messages = []
+        info.showMore = false
+        info.requested = false
+        info.conversationId = conv.conversationId
+        this.messageMap.push(info)
+      },
       formatDate (c, fmt) {
         return util.formatDate(c, fmt || 'YYYY年M月D日  HH:mm')
       },
@@ -324,8 +345,7 @@
           if (info.conversationId == conv.conversationId) {
             this.chatStyle.top = '0'
             if (!info.requested) {
-              let url = '/message/prev?cid=' + conv.conversationId + '&createtime=' + encodeURIComponent(conv.createTime) + '&include=true'
-              axios.get(url).then(res => {
+              msgRequest.historyMessage(conv.conversationId, conv.createTime, true).then(res => {
                 if (res.data) {
                   info.messages = res.data
                   this.cur = idx
@@ -360,11 +380,7 @@
       remove () {
         if (this.delIdx >= 0) {
           let conv = this.conversations[this.delIdx]
-          let data = {
-            'userId': this.user.userId,
-            'conversationId': conv.conversationId
-          }
-          axios.delete('/conversation/delete', {params: data}).then(res => {
+          convRequest.delConversation(this.user.userId, conv.conversationId).then(res => {
             storage.spliceConversation(this.delIdx, 1)
             this.removeConversation(conv.conversationId)
             if (this.delIdx<this.cur) {
@@ -422,12 +438,12 @@
         }
       },
       addFriend: function () {
-        this.$modal.show(AddFriend, {}, {
-          draggable: true,
-          width: 550,
-          height: 485,
-          clickToClose: false,
-        })
+        // this.$modal.show(AddFriend, {}, {
+        //   draggable: true,
+        //   width: 550,
+        //   height: 485,
+        //   clickToClose: false,
+        // })
       },
       convEnter: function (event) {
         let target = event.srcElement

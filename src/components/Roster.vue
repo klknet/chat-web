@@ -1,5 +1,5 @@
 <template>
-  <div class="roster">
+  <div class="roster" @click="hideMenu">
     <div class="median" id="median">
       <div class="search">
         <div>
@@ -16,7 +16,8 @@
             </div>
             <div class="group-content">
               <ul>
-                <li @click="select(map[newFriendKey], newFriendKey)" :class="{active: cur === map[newFriendKey]}">
+                <li @click="select(map[newFriendKey], newFriendKey)"
+                    :class="{active: cur === map[newFriendKey]}">
                   <img class="avatar" src="/web/static/img/newfriend.png"/>
                   <span class="notation">新的朋友</span>
                 </li>
@@ -30,7 +31,8 @@
             <div class="group-content">
               <ul>
                 <li v-for="(friend) in value.groups" @click="select(map[friend.userId], friend.userId)"
-                    :class="{active: cur === map[friend.userId]}">
+                    :class="{active: cur === map[friend.userId]}"
+                    @contextmenu.prevent="menu(friend.userId, $event)">
                   <img :src="friend.profileUrl" class="avatar"/>
                   <span class="notation">{{friend.remark}}</span>
                 </li>
@@ -38,6 +40,19 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="conv-menu" :style="menuStyle">
+        <ul>
+          <li>
+            <a>置顶</a>
+          </li>
+          <li>
+            <a>消息免打扰</a>
+          </li>
+          <li class="divider" @click="remove">
+            <a>删除好友</a>
+          </li>
+        </ul>
       </div>
     </div>
     <div class="right">
@@ -58,7 +73,7 @@
                 </div>
                 <div>
                   <span v-if="friend.status == 0">
-                    <button class="accept" @click="accept(friend.userId)">接受</button>
+                    <button class="accept" @click="accept(friend.id)">接受</button>
                   </span>
                   <span v-if="friend.status == 1" class="gray">已添加</span>
                 </div>
@@ -108,15 +123,16 @@
       </div>
     </div>
     <modals-container>
-      <!--<modal name="add-friend"></modal>-->
     </modals-container>
   </div>
 </template>
 
 <script>
   import axios from '../request'
-  import util from '../util'
   import storage from '../storage'
+  import userRequest from '../user'
+  import util from '../util'
+  import convRequest from '../conversation'
   import vm from '@/event'
   import AddFriend from './AddFriend'
 
@@ -129,27 +145,42 @@
         map: {},
         newFriendKey: 'new_friend_key',
         friend: {},
+        delIdx: -1,
+        menuStyle: {},
         newFriends: [],
       }
     },
     created () {
       let user = storage.getUser()
       this.user = user
-      let li_index = 0
-      this.map[this.newFriendKey] = li_index++
-      let friendGroup = this.user.groupFriend
-      for (let i in friendGroup) {
-        let friends = friendGroup[i].groups
-        for (let i in friends) {
-          this.map[friends[i].userId] = li_index++
-        }
-      }
-      axios.get('/relation/requestList?userId=' + user.userId).then(res => {
+      this.buildMap()
+      userRequest.requestList(user.userId).then(res => {
         this.newFriends = res.data
       })
 
     },
+    mounted() {
+      vm.$on('friendRequest', (data) => {
+        console.log('friend request', data)
+        this.newFriends.push(JSON.parse(data))
+      })
+      vm.$on('freshFriend', (data) => {
+        console.log('fresh friend')
+        this.requestFriend()
+      })
+    },
     methods: {
+      buildMap: function () {
+        let li_index = 0
+        this.map[this.newFriendKey] = li_index++
+        let friendGroup = this.user.groupFriend
+        for (let i in friendGroup) {
+          let friends = friendGroup[i].groups
+          for (let i in friends) {
+            this.map[friends[i].userId] = li_index++
+          }
+        }
+      },
       select (curI, key) {
         this.cur = curI
         for (let i in this.user.friends) {
@@ -168,28 +199,28 @@
             return
           }
         }
-        let fd = new FormData()
-        fd.set('destId', destId)
-        fd.set('userId', this.user.userId)
-        axios.post('conversation/build', fd,
-          {headers: {'Content-Type': 'application/x-www-form-urlencoded'}}).then(res => {
-          // storage.removeConversation()
-          this.$router.push({name: 'Chat', params: {idx: '0'}})
-          vm.$emit('navIdx', 0)
-        })
+        convRequest.buildConversation(this.user.userId, destId)
+          .then(res => {
+            this.$router.push({name: 'Chat', params: {idx: '0', conv: res.data}})
+            vm.$emit('navIdx', 0)
+          })
       },
-      accept (destId) {
-        let df = new FormData()
-        df.set('userId', this.user.userId)
-        df.set('destId', destId)
-        axios.post('/relation/agreeRequest', df, {headers:{'Content-Type': 'application/x-www-form-urlencoded'}}).then(res=>{
-          for(let friend in this.newFriends){
-            if(friend.userId == destId) {
-              friend.status = 1
-              break
+      accept (objectId) {
+        let self = this
+        userRequest.agreeFriendRequest(objectId, self.user.userId)
+          .then(() => userRequest.findById(self.user.userId))
+          .then(res => {
+            debugger
+            self.user = res.data
+            util.groupFriend(res.data)
+            storage.setUser(res.data)
+            for (let friend of self.newFriends) {
+              if (friend.id == objectId) {
+                friend.status = 1
+                break
+              }
             }
-          }
-        })
+          })
       },
       addFriend: function () {
         this.$modal.show(AddFriend, {}, {
@@ -199,6 +230,34 @@
           clickToClose: false,
         })
       },
+      menu (index, e) {
+        this.delIdx = index
+        this.menuStyle = {
+          left: e.clientX + 'px',
+          top: e.clientY + 'px',
+          display: 'block'
+        }
+      },
+      hideMenu () {
+        this.menuStyle.display = 'none'
+      },
+      remove () {
+        if (this.delIdx != -1) {
+          console.log(this.delIdx)
+          userRequest.delFriend(this.user.userId, this.delIdx)
+            .then(() => this.requestFriend())
+        }
+      },
+      requestFriend() {
+        userRequest.findById(this.user.userId).then(res => {
+          let user = res.data
+          util.groupFriend(user)
+          storage.setUser(user)
+          this.user = user
+          this.buildMap()
+          this.friend = {}
+        })
+      }
     }
   }
 </script>
@@ -207,8 +266,32 @@
   ::-webkit-scrollbar {
     width: 0;
   }
+
   .roster {
     height: 100%;
+  }
+
+  .conv-menu {
+    background-color: #ffffff;
+    width: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    position: absolute;
+    display: none;
+    z-index: 999;
+  }
+
+  .conv-menu .divider {
+    border-top: solid 1px #e7e7e7;
+  }
+
+  .conv-menu li {
+    padding: 5px 20px;
+    text-align: left;
+  }
+
+  .conv-menu li:hover {
+    background-color: #DFDDDB;
   }
 
   li, ul, div {
