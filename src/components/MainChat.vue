@@ -23,6 +23,7 @@
   import storage from '../storage'
   import config from '../config'
   import ws from '../websocket'
+  // import util from '@/util'
 
   export default {
     name: 'MainChat',

@@ -1,9 +1,20 @@
 import moment from 'moment'
 import lodash from 'lodash'
 import pinyin from 'js-pinyin'
+import CryptoJS from 'crypto-js'
+import axios from '@/request'
+import storage from '@/storage'
 
 
 export default {
+  getKey() {
+    let aes = storage.getAes()
+    return CryptoJS.enc.Utf8.parse(aes.key)
+  },
+  getIV() {
+    let aes = storage.getAes()
+    return CryptoJS.enc.Utf8.parse(aes.iv)
+  },
   /*
     格式化日期
      */
@@ -51,4 +62,33 @@ export default {
   toIndex() {
     location.href = '/web'
   },
+  /*
+  获取aes key
+   */
+  getAesKey() {
+    if (!storage.getAes())
+      axios.get('/util/aesKey').then(res => storage.setAes(res.data))
+  },
+  /*
+  aes加密
+   */
+  encrypt(word) {
+    let srcs = CryptoJS.enc.Utf8.parse(word);
+    let encrypted = CryptoJS.AES.encrypt(srcs, this.getKey(),
+      { iv: this.getIV(), mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    return encrypted.ciphertext.toString().toUpperCase();
+  },
+  /*
+  aes解密
+   */
+  decrypt(word) {
+    let encryptedHexStr = CryptoJS.enc.Hex.parse(word);
+    let srcs = CryptoJS.enc.Base64.stringify(encryptedHexStr);
+    let decrypt = CryptoJS.AES.decrypt(srcs, this.getKey(),
+      { iv: this.getIV(), mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    let decryptedStr = decrypt.toString(CryptoJS.enc.Utf8);
+    return decryptedStr.toString();
+  },
+
+
 }

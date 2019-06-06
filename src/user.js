@@ -1,4 +1,5 @@
 import axios from './request'
+import util from '@/util'
 
 
 export default {
@@ -9,10 +10,9 @@ export default {
   login: function (username, pwd) {
     var fd = new FormData()
     fd.set('unique', username)
-    fd.set('pwd', Buffer.from('konglk' + pwd).toString('base64'))
+    fd.set('pwd', util.encrypt(pwd))
     return axios.post('/user/login', fd, {
       headers: {
-        token: this.token,
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     })

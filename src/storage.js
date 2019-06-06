@@ -3,6 +3,19 @@ import pinyin from 'js-pinyin'
 import lodash from 'lodash'
 
 let storage = {
+  setAes: function(aes) {
+    localStorage.aes = JSON.stringify(aes)
+  },
+  getAes: function() {
+    let aes = window.aes
+    if(aes != null)
+      return aes
+    aes = localStorage.aes
+    if(aes == null)
+      return null
+    window.aes = JSON.parse(aes)
+    return window.aes
+  },
   setUser: function (user) {
     window.user = user
     localStorage.user = JSON.stringify(user)
@@ -13,7 +26,8 @@ let storage = {
       return user
     user = localStorage.user
     if (user == null) {
-      util.toIndex()
+      // util.toIndex()
+      return null
     }
     window.user = JSON.parse(user)
     return window.user

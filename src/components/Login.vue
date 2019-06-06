@@ -41,6 +41,7 @@
       }
     },
     created () {
+      util.getAesKey()
     },
     methods: {
       doLogin () {
