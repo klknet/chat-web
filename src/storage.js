@@ -45,7 +45,7 @@ let storage = {
     window.user.conversations.splice(idx, 1)
     this.setUser(window.user)
   },
-  removeConversation: function() {
+  removeMapRef: function() {
     if(!window.user)
       window.user = this.getUser()
     if(window.user.conversations && window.user.conversations.length > 0) {

@@ -17,7 +17,7 @@
             <li v-for="(conversation, index) in conversations"
                 @click="show(conversation, index)"
                 @contextmenu.prevent="menu(index, $event)"
-                v-bind:class="{active: cur===index}">
+                v-bind:class="{active: cur===index, top: conversation.top}">
               <div>
               <span class="profile">
                   <img v-bind:src="conversation.profileUrl">
@@ -38,6 +38,7 @@
                           [图片]
                       </template>
                   </span>
+                  <span class="dnd" v-show="conversation.dnd"></span>
               </span>
               </div>
             </li>
@@ -46,11 +47,11 @@
       </div>
       <div class="conv-menu" :style="menuStyle">
         <ul>
-          <li>
-            <a>置顶</a>
+          <li @click="top">
+            <a>{{isTop?'取消置顶':'置顶'}}</a>
           </li>
-          <li>
-            <a>消息免打扰</a>
+          <li @click="dnd">
+            <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
           </li>
           <li class="divider" @click="remove">
             <a>删除聊天</a>
@@ -64,9 +65,11 @@
         <span>{{cur == -1 ? '' : chatPerson.notename}}</span>
       </div>
       <div class="chat-area" v-show="cur === -1"></div>
-      <div class="chat-area" :class="{'chat-active': i===cur}" v-for="(info, i) in messageMap"
+      <div class="chat-area"
+           :class="{'chat-active': cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId}"
+           v-for="(info, i) in messageMap"
            v-show="cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId"
-           @mouseenter="chatEnter" @mouseleave="chatLeave" @scroll.passive="chatScroll" >
+           @mouseenter="chatEnter" @mouseleave="chatLeave" @scroll.passive="chatScroll">
         <div class="scrollbar" v-show="chatShow" :style="chatStyle" style="height: 45px;"></div>
         <div @scroll.passive="scrollEvent" class="chat-inner">
           <ul>
@@ -117,7 +120,7 @@
                             <img src="/web/static/img/video.png">
                         </span>
           </div>
-          <div class="content" @keydown.delete="clearMsg" @paste.prevent="pasteImg"
+          <div class="content" @keydown.delete="clearMsg" @paste.prevent="paste"
                v-on:keydown.enter.prevent="sendMsg">
             <div class="img-area">
               <ul>
@@ -158,12 +161,11 @@
       return {
         user: {},
         conversations: [],
-        // messages: [],
         messageMap: [],
         cur: -1,
         delIdx: -1,
         convShow: false,
-        convStyle:{
+        convStyle: {
           top: '0px',
         },
         chatShow: false,
@@ -176,13 +178,15 @@
         chatPerson: {
           notename: ''
         },
+        isTop: false,
+        isDnd: false,
       }
     },
-    activated() {
+    activated () {
       //组件切换时触发
       let params = this.$route.params
       if (params.idx != undefined) {
-        if(params.conv != undefined) {
+        if (params.conv != undefined) {
           this.conversations.unshift(params.conv)
           this.addConversation(params.conv)
           storage.setConversation(this.conversations)
@@ -212,8 +216,8 @@
               let time = new Date()
               time.getHours()
               time.getMinutes()
-              let f = time.getHours()+":"+time.getMinutes()
-              alert("当前账号于"+f+"在其它设备上登录。此客户端已退出登录。")
+              let f = time.getHours() + ':' + time.getMinutes()
+              alert('当前账号于' + f + '在其它设备上登录。此客户端已退出登录。')
               storage.removeUser()
             }
             if (resp.code == 80002) {
@@ -262,7 +266,7 @@
               }
               if (Notification.permission == 'granted') {
                 self.notify(message)
-              }  else {
+              } else {
                 Notification.requestPermission().then(function (permission) {
                   if (permission == 'granted') {
                     self.notify(message)
@@ -272,7 +276,6 @@
             }
             break
         }
-
 
       }
 
@@ -288,21 +291,20 @@
           notify.close()
         }, 8000)
       },
+      //当前消息和上条消息间隔是否超过5分钟
       diff (messages, index) {
         let d = new Date(messages[index].createTime).getTime() - new Date(messages[index - 1].createTime).getTime()
         return d > 300000
       },
-      getConversation(user) {
+      //获取会话列表
+      getConversation (user) {
         convRequest.getConversation(user.userId).then(res => {
           this.conversations = res.data
           this.buildMessageMap(res.data)
           storage.setConversation(res.data)
-          if (this.$route.params.idx != undefined) {
-            let idx = parseInt(this.$route.params.idx)
-            this.show(this.conversations[idx], idx)
-          }
         })
       },
+      //构建messageMap
       buildMessageMap (conversations) {
         for (let conv of conversations) {
           let info = {}
@@ -313,7 +315,8 @@
           this.messageMap.push(info)
         }
       },
-      removeConversation(convId) {
+      //移除messageMap里的会话引用
+      removeMapRef (convId) {
         for (let i in this.messageMap) {
           let info = this.messageMap[i]
           if (info.conversationId === convId) {
@@ -322,7 +325,7 @@
           }
         }
       },
-      addConversation(conv) {
+      addConversation (conv) {
         let info = {}
         info.messages = []
         info.showMore = false
@@ -333,6 +336,7 @@
       formatDate (c, fmt) {
         return util.formatDate(c, fmt || 'YYYY年M月D日  HH:mm')
       },
+      //点击会话，显示历史消息
       show (c, idx) {
         this.chatPerson = {
           notename: c.notename,
@@ -340,7 +344,6 @@
           profileUrl: c.profileUrl
         }
         let conv = this.conversations[idx]
-        // debugger
         for (let info of this.messageMap) {
           if (info.conversationId == conv.conversationId) {
             this.chatStyle.top = '0'
@@ -361,43 +364,35 @@
           }
         }
       },
+      //消息滚动到底端
       scroll2End () {
         this.$nextTick(() => {
           let chatArea = document.getElementsByClassName('chat-active')[0]
-          if (chatArea.scrollHeight) {
+          if (chatArea && chatArea.scrollHeight) {
             chatArea.scrollTop = chatArea.scrollHeight
           }
         })
       },
+      //右键点击
       menu (index, e) {
         this.delIdx = index
+        this.isTop = this.conversations[index].top
+        this.isDnd = this.conversations[index].dnd
         this.menuStyle = {
           left: e.clientX + 'px',
           top: e.clientY + 'px',
+          width: this.isDnd ? '130px' : '100px',
           display: 'block'
         }
       },
-      remove () {
-        if (this.delIdx >= 0) {
-          let conv = this.conversations[this.delIdx]
-          convRequest.delConversation(this.user.userId, conv.conversationId).then(res => {
-            storage.spliceConversation(this.delIdx, 1)
-            this.removeConversation(conv.conversationId)
-            if (this.delIdx<this.cur) {
-              this.cur -= 1
-            }
-            if(this.conversations.length == 0){
-              this.cur = -1
-            }
-          })
-        }
-      },
+
       hideMenu () {
         this.menuStyle.display = 'none'
       },
       clear () {
         this.hideMenu()
       },
+      //发送消息
       sendMsg: function () {
         if (this.message2send && this.cur != -1) {
           // console.log('send message', this.message2send)
@@ -422,20 +417,38 @@
           this.message2send = ''
         }
       },
+      //更新会话信息
       updateConversation (idx, message) {
         let conv = this.conversations[idx]
         conv.lastMsg = message.content
         conv.updateTime = new Date()
         conv.type = message.type
         if (this.conversations.length > 0) {
-          this.conversations[idx] = this.conversations[0]
-          this.conversations.splice(idx, 1)
-          this.conversations.unshift(conv)
-          this.cur = 0
-          let temp = this.messageMap[idx]
-          this.messageMap.splice(idx, 1)
-          this.messageMap.unshift(temp)
+          let i = 0
+          if (!conv.top) {
+            //非置顶会话排在置顶会话下面
+            i = this.noTopIndex()
+          }
+          if (idx == i) {
+            return
+          }
+          this.conversations[idx] = this.conversations[i]
+          this.conversations[i] = conv
+          if (this.cur != i) {
+            this.cur = i
+          }
+          console.log(this.cur)
         }
+      },
+      //非置顶会话index
+      noTopIndex: function () {
+        let i = 0
+        for (i in this.conversations) {
+          if (!this.conversations[i].top) {
+            break
+          }
+        }
+        return i
       },
       addFriend: function () {
         // this.$modal.show(AddFriend, {}, {
@@ -448,48 +461,95 @@
       convEnter: function (event) {
         let target = event.srcElement
         let inner = target.lastChild
-        if(inner.clientHeight > target.clientHeight)
+        if (inner.clientHeight > target.clientHeight) {
           this.convShow = true
+        }
       },
       convLeave: function (event) {
         this.convShow = false
       },
-      convScroll: lodash.debounce(function(event) {
+      //会话列表滚动事件
+      convScroll: lodash.debounce(function (event) {
         let target = event.srcElement
         let ul = target.lastChild
         let h = target.clientHeight
         let scrollTop = target.scrollTop
-        let ulHeight = ul.clientHeight-h
-        let rate = scrollTop/ulHeight
-        let offset = rate*h
-        // console.log(event)
-        // console.log('clientHeight='+h+",scrollTop="+scrollTop+',rate='+rate+',offset='+offset)
-        let cur = Math.min(scrollTop+offset, ul.clientHeight-17)
+        let ulHeight = ul.clientHeight - h
+        let rate = scrollTop / ulHeight
+        let offset = rate * h
+        let cur = Math.min(scrollTop + offset, ul.clientHeight - 17)
         console.log(cur)
-        this.convStyle.top = cur+'px'
+        this.convStyle.top = cur + 'px'
       }, 50),
-      chatEnter: function(event) {
+      chatEnter: function (event) {
         let target = event.srcElement
         let inner = target.lastChild
-        if(inner.clientHeight > target.clientHeight)
+        if (inner.clientHeight > target.clientHeight) {
           this.chatShow = true
+        }
       },
-      chatLeave: function(event) {
+      chatLeave: function (event) {
         this.chatShow = false
       },
-      chatScroll: lodash.debounce(function(event) {
+      //消息列表滚动事件
+      chatScroll: lodash.debounce(function (event) {
         let target = event.srcElement
         let inner = target.lastChild
         let bar = target.firstChild
-        console.log(event)
         let h = target.clientHeight
         let scrollTop = target.scrollTop
-        let innerHeight = inner.clientHeight-h
-        let rate = scrollTop/innerHeight
-        let offset = rate*h
-        let cur = Math.floor(Math.min(scrollTop+offset, inner.clientHeight-45))
-        bar.style.top = cur+'px'
+        let innerHeight = inner.clientHeight - h
+        let rate = scrollTop / innerHeight
+        let offset = rate * h
+        let cur = Math.floor(Math.min(scrollTop + offset, inner.clientHeight - 45))
+        bar.style.top = cur + 'px'
       }, 50),
+      //置顶、取消置顶
+      top: function () {
+        if (this.delIdx >= 0) {
+          let conv = this.conversations[this.delIdx]
+          convRequest.top(this.user.userId, conv.conversationId, !conv.top)
+            .then(() => {
+              let i=0
+              if (conv.top) {
+                //取消置顶
+                i = this.noTopIndex()
+              }
+              console.log(i)
+              if (this.delIdx != i) {
+                this.conversations[this.delIdx] = this.conversations[i]
+                this.conversations[i] = conv
+              }
+              conv.top = !conv.top
+            })
+        }
+      },
+      dnd: function () {
+        if (this.delIdx >= 0) {
+          let conv = this.conversations[this.delIdx]
+          convRequest.dnd(this.user.userId, conv.conversationId, !conv.dnd)
+            .then(() => conv.dnd = !conv.dnd)
+        }
+      },
+      //删除会话
+      remove () {
+        if (this.delIdx >= 0) {
+          let conv = this.conversations[this.delIdx]
+          convRequest.delConversation(this.user.userId, conv.conversationId).then(res => {
+            storage.spliceConversation(this.delIdx, 1)
+            this.removeMapRef(conv.conversationId)
+            if (this.delIdx < this.cur) {
+              this.cur -= 1
+            }
+            if (this.conversations.length == 0) {
+              this.cur = -1
+            }
+          })
+        }
+      },
+      paste: function (event) {
+        console.log(event)
+      },
       propFile: function () {
 
       },
@@ -513,7 +573,6 @@
     background: rgba(255, 0, 0, 0.4);
     display: none;
   }
-
 
   li, ul, div {
     margin: 0;
@@ -552,7 +611,7 @@
     float: left;
     height: 100%;
     background: #F5F5F5;
-    overflow:hidden;
+    overflow: hidden;
     /*url("/static/img/wechat.png") no-repeat center;
        background-size: 93px;*/
   }
@@ -618,7 +677,7 @@
   }
 
   .scrollbar {
-    width:7px;
+    width: 7px;
     height: 18px;
     background-color: #D2D2D2;
     position: absolute;
@@ -654,6 +713,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .conversations .dnd {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 12px;
+    height: 12px;
+    background: url("../../static/img/dnd.svg");
+    background-size: 12px;
   }
 
   .conversations .nickname, .conversations .last-msg {
@@ -698,6 +767,12 @@
   .conversations li.active {
     background: linear-gradient(to right, #C8C6C6, #C3C3C3, #CAC7C6);
   }
+
+  .top {
+    background: linear-gradient(to right, #D6D5D5, #D6D6D7, #D5D2D2);
+  }
+
+
 
   .conv-menu {
     background-color: #ffffff;
@@ -756,7 +831,6 @@
     font-size: 14px;
     position: relative;
   }
-
 
   .chat-area .more-info span {
     color: #2C90FC;

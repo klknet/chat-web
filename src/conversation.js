@@ -15,8 +15,7 @@ export default {
     let fd = new FormData()
     fd.set('destId', destId)
     fd.set('userId', userId)
-    return axios.post('conversation/build', fd,
-      {headers: {'Content-Type': 'application/x-www-form-urlencoded'}})
+    return axios.post('conversation/build', fd)
   },
   /*
   删除会话
@@ -27,5 +26,25 @@ export default {
       'conversationId': conversationId
     }
     return axios.delete('/conversation/delete', {params: data})
-  }
+  },
+  /*
+  置顶会话
+   */
+  top: function (userId, conversationId, top) {
+    let fd = new FormData()
+    fd.set('conversationId', conversationId)
+    fd.set('userId', userId)
+    fd.set('top', top)
+    return axios.post('/conversation/top', fd)
+  },
+  /*
+  免打扰
+   */
+  dnd: function (userId, conversationId, dnd) {
+    let fd = new FormData()
+    fd.set('conversationId', conversationId)
+    fd.set('userId', userId)
+    fd.set('dnd', dnd)
+    return axios.post('/conversation/dnd', fd)
+  },
 }
