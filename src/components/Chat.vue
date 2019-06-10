@@ -432,19 +432,42 @@
           if (idx == i) {
             return
           }
-          this.conversations[idx] = this.conversations[i]
-          this.conversations[i] = conv
+          this.conversations.splice(idx, 1)
+          this.conversations.splice(i, 0, conv)
+          console.log(this.cur, i)
           if (this.cur != i) {
             this.cur = i
           }
-          console.log(this.cur)
         }
+      },
+      //会话索引
+      indexOfConversation: function (conv) {
+        for (let i in this.conversations) {
+          if (this.conversations[i].id == conv.id) {
+            return i
+          }
+        }
+        return -1
       },
       //非置顶会话index
       noTopIndex: function () {
         let i = 0
         for (i in this.conversations) {
           if (!this.conversations[i].top) {
+            break
+          }
+        }
+        return i
+      },
+      //比conv time早的会话索引
+      earlyConversationIndex: function (conv) {
+        let i = 0
+        for (i in this.conversations) {
+          let cur = this.conversations[i]
+          if (cur.top) {
+            continue
+          }
+          if (cur.updateTime <= conv.updateTime) {
             break
           }
         }
@@ -507,20 +530,37 @@
       //置顶、取消置顶
       top: function () {
         if (this.delIdx >= 0) {
+          let prev = -1
+          if (this.cur > 0) {
+            prev = this.conversations[this.cur]
+          }
           let conv = this.conversations[this.delIdx]
           convRequest.top(this.user.userId, conv.conversationId, !conv.top)
             .then(() => {
-              let i=0
+              let i = 0
               if (conv.top) {
-                //取消置顶
-                i = this.noTopIndex()
-              }
-              console.log(i)
-              if (this.delIdx != i) {
-                this.conversations[this.delIdx] = this.conversations[i]
-                this.conversations[i] = conv
+                //取消置顶 按更新时间排序
+                i = this.earlyConversationIndex(conv)
+                console.log(i)
+                if (this.delIdx != i) {
+                  this.conversations.splice(this.delIdx, 1)
+                  this.conversations.splice(i==this.conversations.length? i : i-1, 0, conv)
+                }
+              } else {
+                //置顶
+                if (this.delIdx != i) {
+                  this.conversations.splice(this.delIdx, 1)
+                  this.conversations.unshift(conv)
+                }
               }
               conv.top = !conv.top
+
+              if (this.cur > 0) {
+                let curIdx = this.indexOfConversation(prev)
+                if (curIdx != this.cur) {
+                  this.cur = curIdx
+                }
+              }
             })
         }
       },
@@ -771,8 +811,6 @@
   .top {
     background: linear-gradient(to right, #D6D5D5, #D6D6D7, #D5D2D2);
   }
-
-
 
   .conv-menu {
     background-color: #ffffff;

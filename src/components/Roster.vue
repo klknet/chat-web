@@ -210,7 +210,6 @@
         userRequest.agreeFriendRequest(objectId, self.user.userId)
           .then(() => userRequest.findById(self.user.userId))
           .then(res => {
-            debugger
             self.user = res.data
             util.groupFriend(res.data)
             storage.setUser(res.data)

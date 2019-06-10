@@ -8,10 +8,10 @@ let storage = {
   },
   getAes: function() {
     let aes = window.aes
-    if(aes != null)
+    if(aes)
       return aes
     aes = localStorage.aes
-    if(aes == null)
+    if(!aes)
       return null
     window.aes = JSON.parse(aes)
     return window.aes
@@ -22,11 +22,10 @@ let storage = {
   },
   getUser: function () {
     let user = window.user
-    if (user != null)
+    if (user)
       return user
     user = localStorage.user
-    if (user == null) {
-      // util.toIndex()
+    if (!user) {
       return null
     }
     window.user = JSON.parse(user)

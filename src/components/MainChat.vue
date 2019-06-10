@@ -23,7 +23,7 @@
   import storage from '../storage'
   import config from '../config'
   import ws from '../websocket'
-  // import util from '@/util'
+  import util from '@/util'
 
   export default {
     name: 'MainChat',
@@ -36,7 +36,10 @@
       }
     },
     created () {
+      util.getAesKey()
       let user = storage.getUser()
+      if(!user)
+        util.toIndex()
       this.user = user
       const wsChat = new WebSocket(config.ws)
       window.wsChat = wsChat
