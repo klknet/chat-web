@@ -20,7 +20,7 @@
                 v-bind:class="{active: cur===index, top: conversation.top}">
               <div>
               <span class="profile">
-                  <img v-bind:src="conversation.profileUrl">
+                  <img v-bind:src="getProfileUrl(conversation)">
                   <a><span style="display: none;">
                       {{conversation.unreadCount>99?'99+':conversation.unreadCount}}
                   </span></a>
@@ -137,23 +137,23 @@
         </div>
       </div>
     </div>
-    <!--<modals-container>-->
-    <!--</modals-container>-->
+    <modals-container>
+    </modals-container>
   </div>
 
 </template>
 
 <script>
   import storage from '../storage'
-  import axios from '../request'
   import convRequest from '../conversation'
   import msgRequest from '../message'
   import util from '../util'
-  import AddFriend from './AddFriend'
   import vm from '@/event'
   import lodash from 'lodash'
   import userRequest from '../user'
   import ws from '../websocket'
+  import CreateGroupChat from './CreateGroupChat'
+  import config from '@/config'
 
   export default {
     name: 'Chat',
@@ -474,12 +474,12 @@
         return i
       },
       addFriend: function () {
-        // this.$modal.show(AddFriend, {}, {
-        //   draggable: true,
-        //   width: 550,
-        //   height: 485,
-        //   clickToClose: false,
-        // })
+        this.$modal.show(CreateGroupChat, {}, {
+          draggable: true,
+          width: 550,
+          height: 485,
+          clickToClose: false,
+        })
       },
       convEnter: function (event) {
         let target = event.srcElement
@@ -586,6 +586,12 @@
             }
           })
         }
+      },
+      getProfileUrl(conv) {
+        if(conv.type == 0) {
+          return conv.profileUrl
+        }
+        return 'http://'+config.host+config.context+"/file/img?id="+conv.profileUrl
       },
       paste: function (event) {
         console.log(event)

@@ -18,6 +18,16 @@ export default {
     return axios.post('conversation/build', fd)
   },
   /*
+  群聊
+   */
+  groupConversation: function(userId, userIds) {
+    let fd = new FormData()
+    fd.set('userId', userId)
+    fd.set('userIds', userIds)
+    fd.set('notename', '群聊测试')
+    return axios.post('conversation/groupChat', fd)
+  },
+  /*
   删除会话
    */
   delConversation: function (userId, conversationId) {
