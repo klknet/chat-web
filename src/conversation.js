@@ -57,4 +57,11 @@ export default {
     fd.set('dnd', dnd)
     return axios.post('/conversation/dnd', fd)
   },
+  /*
+  群聊成员
+   */
+  groupChatMember:  function(id) {
+    if (id)
+      return axios.get("/conversation/groupChatMember?id="+id)
+  }
 }

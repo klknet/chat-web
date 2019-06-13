@@ -66,8 +66,9 @@ export default {
   获取aes key
    */
   getAesKey() {
-    if (!storage.getAes())
+    if (!storage.getAes()) {
       axios.get('/util/aesKey').then(res => storage.setAes(res.data))
+    }
   },
   /*
   aes加密

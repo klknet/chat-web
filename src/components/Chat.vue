@@ -29,12 +29,10 @@
                   <span class="nickname">{{conversation.notename}}</span>
                   <span class="last-date">{{formatDate(conversation.updateTime, 'YY/M/D')}}</span>
                   <span class="last-msg">
-                      <template v-if="conversation.msgType === null">
+                      <template v-if="conversation.messageType === 0">
+                        {{conversation.lastMsg}}
                       </template>
-                      <template v-else-if="conversation.type == 0">
-                          {{conversation.lastMsg}}
-                      </template>
-                      <template v-else>
+                      <template v-else-if="conversation.type == 1">
                           [图片]
                       </template>
                   </span>
@@ -66,9 +64,9 @@
       </div>
       <div class="chat-area" v-show="cur === -1"></div>
       <div class="chat-area"
-           :class="{'chat-active': cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId}"
+           :class="{'chat-active': cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId}"
            v-for="(info, i) in messageMap"
-           v-show="cur!= -1 && conversations[cur] && info.conversationId===conversations[cur].conversationId"
+           v-show="cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId"
            @mouseenter="chatEnter" @mouseleave="chatLeave" @scroll.passive="chatScroll">
         <div class="scrollbar" v-show="chatShow" :style="chatStyle" style="height: 45px;"></div>
         <div @scroll.passive="scrollEvent" class="chat-inner">
@@ -95,14 +93,20 @@
                 </div>
               </div>
               <div class="img-msg" v-else>
-                <a class="other-person"><img v-bind:src="chatPerson.profileUrl"></a>
-                <div v-if="message.type==3">
+                <template v-if="message.chatType === 0">
+                  <a class="other-person"><img v-bind:src="chatPerson.profileUrl"></a>
+                </template>
+                <template v-else>
+                  <a class="other-person"><img v-bind:src="groupChatUrl(message, info.conv).profileUrl"></a>
+                  <span class="nickname ">{{groupChatUrl(message, info.conv).nickname}}</span>
+                </template>
+                <template v-if="message.type == 0">
+                  <span class="other-person" :class="{'group-person': message.chatType == 1}">{{message.content}}</span>
+                </template>
+                <template v-if="message.type == 1">
                   <a class="other-person-content" @click="imageEnlarge($event, message.destId)"><img
                     :src="message.content"></a>
-                </div>
-                <div v-if="message.type==0">
-                  <span class="other-person">{{message.content}}</span>
-                </div>
+                </template>
               </div>
               <div class="clear"></div>
             </li>
@@ -211,7 +215,7 @@
             if (resp.code == 60001) {
               util.toIndex()
             }
-            if (resp.code == 80001) {
+            else if (resp.code == 80001) {
               window.wsChat.close()
               let time = new Date()
               time.getHours()
@@ -220,16 +224,15 @@
               alert('当前账号于' + f + '在其它设备上登录。此客户端已退出登录。')
               storage.removeUser()
             }
-            if (resp.code == 80002) {
-              // userRequest.findById(this.user.userId).then(res => {
-              //   this.user = res.data
-              //   util.groupFriend(res.data)
-              //   storage.setUser(res.data)
-              // })
+            else if (resp.code == 80002) {
               vm.$emit('freshFriend')
             }
-            if (resp.code == 80003) {
+            else if (resp.code == 80003) {
               vm.$emit('friendRequest', resp.data)
+            }
+            else if (resp.code == 80004) {
+              let conv = JSON.parse(resp.data)
+              self.getConversation(self.user)
             }
             break
           case 2:
@@ -237,7 +240,7 @@
             let exist = false
             for (let i in self.messageMap) {
               let info = self.messageMap[i]
-              if (info.conversationId === message.conversationId) {
+              if (info.conv.conversationId === message.conversationId) {
                 exist = true
                 info.messages.push(message)
                 if (self.cur != -1) {
@@ -254,14 +257,15 @@
             if (!send2me) {
               for (let i in self.conversations) {
                 let conv = self.conversations[i]
-                if (conv.destId == message.userId) {
-                  conv.updateTime = message.createTime
-                  conv.lastMsg = message.content
-                  conv.type = message.type
-                  if (i != self.cur) {
-                    self.conversations[i] = self.conversations[0]
-                    self.conversations[0] = conv
-                  }
+                if (conv.conversationId == message.conversationId) {
+                  // conv.updateTime = message.createTime
+                  // conv.lastMsg = message.content
+                  // conv.messageType = message.type
+                  // if (i != self.cur) {
+                  //   self.conversations[i] = self.conversations[0]
+                  //   self.conversations[0] = conv
+                  // }
+                  self.updateConversation(i, message, true)
                 }
               }
               if (Notification.permission == 'granted') {
@@ -311,7 +315,7 @@
           info.messages = []
           info.showMore = false
           info.requested = false
-          info.conversationId = conv.conversationId
+          info.conv = conv
           this.messageMap.push(info)
         }
       },
@@ -345,7 +349,7 @@
         }
         let conv = this.conversations[idx]
         for (let info of this.messageMap) {
-          if (info.conversationId == conv.conversationId) {
+          if (info.conv.conversationId == conv.conversationId) {
             this.chatStyle.top = '0'
             if (!info.requested) {
               msgRequest.historyMessage(conv.conversationId, conv.createTime, true).then(res => {
@@ -404,6 +408,7 @@
             destId: conv.destId,
             content: this.message2send,
             type: 0,
+            chatType: conv.type,
             createTime: new Date().getTime(),
           }
           let data = {
@@ -418,11 +423,11 @@
         }
       },
       //更新会话信息
-      updateConversation (idx, message) {
+      updateConversation (idx, message, stay) {
         let conv = this.conversations[idx]
         conv.lastMsg = message.content
         conv.updateTime = new Date()
-        conv.type = message.type
+        conv.messageType = message.type
         if (this.conversations.length > 0) {
           let i = 0
           if (!conv.top) {
@@ -434,8 +439,8 @@
           }
           this.conversations.splice(idx, 1)
           this.conversations.splice(i, 0, conv)
-          console.log(this.cur, i)
-          if (this.cur != i) {
+          if (!stay && this.cur != i) {
+            console.log(this.cur, i)
             this.cur = i
           }
         }
@@ -587,11 +592,22 @@
           })
         }
       },
+      //群聊图片地址拼接
       getProfileUrl(conv) {
         if(conv.type == 0) {
           return conv.profileUrl
         }
         return 'http://'+config.host+config.context+"/file/img?id="+conv.profileUrl
+      },
+      //群聊成员头像
+      groupChatUrl(message, conv) {
+        if(conv.groupChat) {
+          for(let member of conv.groupChat.members) {
+            if (member.userId === message.userId){
+              return member
+            }
+          }
+        }
       },
       paste: function (event) {
         console.log(event)
@@ -917,6 +933,18 @@
     background-color: #ffffff;
   }
 
+  span.group-person {
+    margin-top: 13px;
+  }
+
+  .img-msg .nickname{
+    position: absolute;
+    top: -8px;
+    left: 45px;
+    font-size:0.85em;
+    color: #C9B2B2;
+  }
+
   a.myself-content, a.other-person-content {
     position: relative;
   }
@@ -977,6 +1005,10 @@
 
   span.other-person:hover {
     background-color: #F6F6F6;
+  }
+
+  span.other-person:hover:before {
+    border-right-color: #F6F6F6;
   }
 
   span.myself:hover {

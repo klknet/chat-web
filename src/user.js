@@ -9,8 +9,8 @@ export default {
    */
   login: function (username, pwd) {
     var fd = new FormData()
-    fd.set('unique', username)
-    fd.set('pwd', util.encrypt(pwd))
+    fd.append('unique', username)
+    fd.append('pwd', util.encrypt(pwd))
     return axios.post('/user/login', fd, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
