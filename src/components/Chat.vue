@@ -255,16 +255,9 @@
             }
             let send2me = (self.user.userId == message.userId)
             if (!send2me) {
-              for (let i in self.conversations) {
+              for (let i=0; i<self.conversations.length; i++) {
                 let conv = self.conversations[i]
                 if (conv.conversationId == message.conversationId) {
-                  // conv.updateTime = message.createTime
-                  // conv.lastMsg = message.content
-                  // conv.messageType = message.type
-                  // if (i != self.cur) {
-                  //   self.conversations[i] = self.conversations[0]
-                  //   self.conversations[0] = conv
-                  // }
                   self.updateConversation(i, message, true)
                 }
               }
@@ -429,6 +422,7 @@
         conv.updateTime = new Date()
         conv.messageType = message.type
         if (this.conversations.length > 0) {
+          let curConv = this.conversations[this.cur]
           let i = 0
           if (!conv.top) {
             //非置顶会话排在置顶会话下面
@@ -439,7 +433,9 @@
           }
           this.conversations.splice(idx, 1)
           this.conversations.splice(i, 0, conv)
-          if (!stay && this.cur != i) {
+          if(stay) {
+            this.cur = this.indexOfConversation(curConv)
+          } else if (this.cur != i) {
             console.log(this.cur, i)
             this.cur = i
           }
@@ -447,7 +443,8 @@
       },
       //会话索引
       indexOfConversation: function (conv) {
-        for (let i in this.conversations) {
+        let i=0
+        for (; i<this.conversations.length; i++) {
           if (this.conversations[i].id == conv.id) {
             return i
           }
@@ -457,7 +454,7 @@
       //非置顶会话index
       noTopIndex: function () {
         let i = 0
-        for (i in this.conversations) {
+        for (i=0; i<this.conversations.length; i++) {
           if (!this.conversations[i].top) {
             break
           }
@@ -467,7 +464,7 @@
       //比conv time早的会话索引
       earlyConversationIndex: function (conv) {
         let i = 0
-        for (i in this.conversations) {
+        for (i=0; i<this.conversations.length; i++) {
           let cur = this.conversations[i]
           if (cur.top) {
             continue
