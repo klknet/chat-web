@@ -160,11 +160,11 @@
 
     },
     mounted() {
-      vm.$on('friendRequest', (data) => {
+      vm.$on('roster-friend-request', (data) => {
         console.log('friend request', data)
         this.newFriends.push(JSON.parse(data))
       })
-      vm.$on('freshFriend', (data) => {
+      vm.$on('roster-fresh-friend', (data) => {
         console.log('fresh friend')
         this.requestFriend()
       })

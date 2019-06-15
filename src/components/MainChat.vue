@@ -24,6 +24,7 @@
   import config from '../config'
   import ws from '../websocket'
   import util from '@/util'
+  import vm from '@/event'
 
   export default {
     name: 'MainChat',
@@ -41,17 +42,14 @@
       if(!user)
         util.toIndex()
       this.user = user
-      const wsChat = new WebSocket(config.ws)
-      window.wsChat = wsChat
-      wsChat.onopen = () => {
-        ws.ping()
-        this.authentication()
-      }
-      wsChat.onclose = (evt) => {
-        console.log("connection closed", wsChat.id)
-      }
+      ws.connect()
       this.$router.push({name: 'Chat'})
 
+    },
+    mounted () {
+      vm.$on('main-authentication', data => {
+        this.authentication()
+      })
     },
     methods: {
       clear() {

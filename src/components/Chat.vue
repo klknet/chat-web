@@ -199,103 +199,53 @@
         this.show(this.conversations[idx], idx)
       }
     },
+    mounted() {
+      //更新会话列表
+      vm.$on('chat-get-conversation', data => {
+        this.getConversation()
+      })
+      //处理新消息
+      vm.$on('chat-receive-message', data => {
+        let message = JSON.parse(data)
+        let exist = false
+        for (let i in this.messageMap) {
+          let info = this.messageMap[i]
+          if (info.conv.conversationId === message.conversationId) {
+            exist = true
+            info.messages.push(message)
+            if (this.cur != -1) {
+              this.scroll2End()
+            }
+            break
+          }
+        }
+        //不存在的会话，新创建一个会话
+        if (!exist) {
+          this.getConversation()
+        }
+        let send2me = (this.user.userId == message.userId)
+        for (let i = 0; i < this.conversations.length; i++) {
+          let conv = this.conversations[i]
+          if (conv.conversationId == message.conversationId) {
+            this.updateConversation(i, message, !send2me)
+          }
+        }
+      })
+    },
     created () {
       let user = storage.getUser()
       this.user = user
-      this.getConversation(user)
-      let self = this
-      window.wsChat.onmessage = (evt) => {
-        let resp = JSON.parse(evt.data)
-        switch (resp.type) {
-          case 0:
-            ws.ping()
-            break
-          case 1:
-            console.log(resp)
-            if (resp.code == 60001) {
-              util.toIndex()
-            }
-            else if (resp.code == 80001) {
-              window.wsChat.close()
-              let time = new Date()
-              time.getHours()
-              time.getMinutes()
-              let f = time.getHours() + ':' + time.getMinutes()
-              alert('当前账号于' + f + '在其它设备上登录。此客户端已退出登录。')
-              storage.removeUser()
-            }
-            else if (resp.code == 80002) {
-              vm.$emit('freshFriend')
-            }
-            else if (resp.code == 80003) {
-              vm.$emit('friendRequest', resp.data)
-            }
-            else if (resp.code == 80004) {
-              let conv = JSON.parse(resp.data)
-              self.getConversation(self.user)
-            }
-            break
-          case 2:
-            let message = JSON.parse(resp.data)
-            let exist = false
-            for (let i in self.messageMap) {
-              let info = self.messageMap[i]
-              if (info.conv.conversationId === message.conversationId) {
-                exist = true
-                info.messages.push(message)
-                if (self.cur != -1) {
-                  self.scroll2End()
-                }
-                break
-              }
-            }
-            //不存在的会话，新创建一个会话
-            if (!exist) {
-              self.getConversation(self.user)
-            }
-            let send2me = (self.user.userId == message.userId)
-            if (!send2me) {
-              for (let i=0; i<self.conversations.length; i++) {
-                let conv = self.conversations[i]
-                if (conv.conversationId == message.conversationId) {
-                  self.updateConversation(i, message, true)
-                }
-              }
-              if (Notification.permission == 'granted') {
-                self.notify(message)
-              } else {
-                Notification.requestPermission().then(function (permission) {
-                  if (permission == 'granted') {
-                    self.notify(message)
-                  }
-                })
-              }
-            }
-            break
-        }
-
-      }
-
+      this.getConversation()
     },
     methods: {
-      notify (message) {
-        let notify = new Notification('收到一条新消息', {
-          body: message.content,
-          tag: 'newMessage',
-
-        })
-        setTimeout(function () {
-          notify.close()
-        }, 8000)
-      },
       //当前消息和上条消息间隔是否超过5分钟
       diff (messages, index) {
         let d = new Date(messages[index].createTime).getTime() - new Date(messages[index - 1].createTime).getTime()
         return d > 300000
       },
       //获取会话列表
-      getConversation (user) {
-        convRequest.getConversation(user.userId).then(res => {
+      getConversation () {
+        convRequest.getConversation(this.user.userId).then(res => {
           this.conversations = res.data
           this.buildMessageMap(res.data)
           storage.setConversation(res.data)
@@ -392,9 +342,7 @@
       //发送消息
       sendMsg: function () {
         if (this.message2send && this.cur != -1) {
-          // console.log('send message', this.message2send)
           let conv = this.conversations[this.cur]
-          console.log(conv.destId)
           let message = {
             conversationId: conv.conversationId,
             userId: this.user.userId,
@@ -411,7 +359,6 @@
           }
           let text = JSON.stringify(data)
           window.wsChat.send(text)
-          this.updateConversation(this.cur, message)
           this.message2send = ''
         }
       },
