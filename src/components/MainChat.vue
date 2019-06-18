@@ -25,6 +25,7 @@
   import ws from '../websocket'
   import util from '@/util'
   import vm from '@/event'
+  import userRequest  from '@/user'
 
   export default {
     name: 'MainChat',
@@ -56,6 +57,7 @@
 
       },
       closeWin: function () {
+        userRequest.delTicket(this.user.userId)
         window.wsChat.close()
         storage.removeUser()
 

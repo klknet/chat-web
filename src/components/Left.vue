@@ -7,9 +7,13 @@
         </a>
       </li>
 
-      <li v-for="(m, index) in map" @click="select(index)">
+      <li class="icon-li" v-for="(m, index) in map" @click="select(index)">
         <a>
           <img :src="format(m, index)">
+          <span :class="{'badge': gtZero(index)}"
+                v-show="gtZero(index)">
+                      {{unreadNum(index)}}
+          </span>
         </a>
       </li>
 
@@ -38,13 +42,14 @@
     data () {
       return {
         map,
-        navIndex: 0
+        navIndex: 0,
+        chatCount: 0,
+        rosterCount: 0,
+        collectorCount: 0,
       }
     },
     created() {
       let hash = location.hash
-      // debugger
-      // this.$router.push(link[this.navIndex])
       for (let i in link){
         if(hash.endsWith(link[i].name.toLowerCase())){
           this.navIndex = i
@@ -55,6 +60,10 @@
       vm.$on('navIdx', (data) => {
         this.navIndex = data
       })
+      vm.$on('left-unread-num', (type, delta) => {
+        // console.log(type, delta)
+        this.chatCount += delta
+      })
 
     },
     methods: {
@@ -64,6 +73,28 @@
       select (i) {
         this.$router.push(link[i])
         this.navIndex = i
+      },
+      unreadNum(i) {
+        if (i == 0){
+          return this.chatCount>99?"99+":this.chatCount
+        }
+        if (i == 1) {
+          return this.rosterCount>99?"99+":this.rosterCount
+        }
+        if (i == 2) {
+          return this.collectorCount>99?"99+":this.collectorCount
+        }
+      },
+      gtZero(i) {
+        if (i == 0){
+          return this.chatCount>0
+        }
+        if (i == 1) {
+          return this.rosterCount>0
+        }
+        if (i == 2) {
+          return this.collectorCount>0
+        }
       },
     }
   }
@@ -77,6 +108,10 @@
 
   li {
     list-style: none;
+  }
+
+  .icon-li {
+    position: relative;
   }
 
   .left {
@@ -116,5 +151,15 @@
     right: 0;
     display: inline-block;
     width: 100%;
+  }
+
+  .badge {
+    background-color: #FF3B30;
+    z-index: 1000;
+    position: absolute;
+    top: -5px;
+    left: 35px;
+    font-weight: 500;
+    padding: 3px 6px;
   }
 </style>

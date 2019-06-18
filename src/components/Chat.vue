@@ -21,7 +21,7 @@
               <div>
               <span class="profile">
                   <img v-bind:src="getProfileUrl(conversation)">
-                  <a><span style="display: none;">
+                  <a><span :class="{'badge': conversation.unreadCount>0}" v-show="conversation.unreadCount>0">
                       {{conversation.unreadCount>99?'99+':conversation.unreadCount}}
                   </span></a>
               </span>
@@ -155,6 +155,7 @@
   import vm from '@/event'
   import lodash from 'lodash'
   import userRequest from '../user'
+  import messageRequest from '@/message'
   import ws from '../websocket'
   import CreateGroupChat from './CreateGroupChat'
   import config from '@/config'
@@ -227,6 +228,13 @@
         for (let i = 0; i < this.conversations.length; i++) {
           let conv = this.conversations[i]
           if (conv.conversationId == message.conversationId) {
+            if(this.cur != i) {
+              conv.unreadCount += 1
+              vm.$emit('left-unread-num', 0, 1)
+            } else {
+              //处于当前会话下就删掉未读消息数量
+              messageRequest.delUnread(message.userId, message.conversationId)
+            }
             this.updateConversation(i, message, !send2me)
           }
         }
@@ -249,6 +257,10 @@
           this.conversations = res.data
           this.buildMessageMap(res.data)
           storage.setConversation(res.data)
+          let total = 0
+          for(let conv of res.data)
+            total += conv.unreadCount
+          vm.$emit('left-unread-num', 0, total)
         })
       },
       //构建messageMap
@@ -285,12 +297,17 @@
       },
       //点击会话，显示历史消息
       show (c, idx) {
+        let conv = this.conversations[idx]
+        if(conv.unreadCount && conv.unreadCount > 0) {
+          vm.$emit('left-unread-num', 0, -conv.unreadCount)
+          messageRequest.delUnread(this.user.userId, conv.conversationId)
+        }
+        conv.unreadCount = 0
         this.chatPerson = {
           notename: c.notename,
           destId: c.destId,
           profileUrl: c.profileUrl
         }
-        let conv = this.conversations[idx]
         for (let info of this.messageMap) {
           if (info.conv.conversationId == conv.conversationId) {
             this.chatStyle.top = '0'
@@ -732,7 +749,7 @@
   }
 
   .conversations .nickname, .conversations .last-msg {
-    left: 55px;
+    left: 60px;
   }
 
   .conversations li {
@@ -753,17 +770,14 @@
     width: 40px;
   }
 
-  .conversations li .badge {
-    background-color: red;
-    color: #FFF;
-    font-size: 9px;
-    border-radius: 50%;
-    position: absolute;
+  .badge {
+    background-color: #FF3B30;
     z-index: 1000;
-    display: inline !important;
     position: absolute;
     top: 2px;
-    left: 42px;
+    left: 40px;
+    padding: 3px 6px;
+    font-weight: 500;
   }
 
   .conversations li .hidden {

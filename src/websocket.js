@@ -24,7 +24,7 @@ export default {
           ping()
           break
         case 1:
-          console.log(resp)
+          // console.log(resp)
           if (resp.code == 60001) {
             util.toIndex()
           }
@@ -38,13 +38,13 @@ export default {
             storage.removeUser()
           }
           else if (resp.code == 80002) {
+            //同意好友请求
             vm.$emit('roster-fresh-friend')
           }
           else if (resp.code == 80003) {
-            vm.$emit('roster-friend-request', resp.data)
+            vm.$emit('roster-friend-request')
           }
           else if (resp.code == 80004) {
-            let conv = JSON.parse(resp.data)
             vm.$emit('chat-get-conversation')
           }
           break

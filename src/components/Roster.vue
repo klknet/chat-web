@@ -154,22 +154,26 @@
       let user = storage.getUser()
       this.user = user
       this.buildMap()
-      userRequest.requestList(user.userId).then(res => {
-        this.newFriends = res.data
-      })
+      this.friendRequest()
 
     },
     mounted() {
       vm.$on('roster-friend-request', (data) => {
-        console.log('friend request', data)
-        this.newFriends.push(JSON.parse(data))
+        console.log('friend request')
+        this.friendRequest()
       })
       vm.$on('roster-fresh-friend', (data) => {
         console.log('fresh friend')
-        this.requestFriend()
+        this.freshUser()
       })
     },
     methods: {
+      //好友请求列表
+      friendRequest: function() {
+        userRequest.requestList(this.user.userId).then(res => {
+          this.newFriends = res.data
+        })
+      },
       buildMap: function () {
         let li_index = 0
         this.map[this.newFriendKey] = li_index++
@@ -247,7 +251,8 @@
             .then(() => this.requestFriend())
         }
       },
-      requestFriend() {
+      //刷新用户信息
+      freshUser() {
         userRequest.findById(this.user.userId).then(res => {
           let user = res.data
           util.groupFriend(user)

@@ -8,5 +8,8 @@ export default {
     let url = '/message/prev?cid=' + conversationId + '&createtime='
       + encodeURIComponent(createTime) + '&include='+include
     return axios.get(url)
+  },
+  delUnread: function (userId, id) {
+    axios.delete('/message/delUnread?userId='+userId+"&id="+id)
   }
 }

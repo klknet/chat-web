@@ -68,6 +68,12 @@ export default {
    */
   delFriend: function (userId, friendId) {
     return axios.delete('/relation/delFriend?userId='+userId+'&friendId='+friendId)
-
+  },
+  /*
+  清除ticket
+   */
+  delTicket: function (userId) {
+    axios.delete("/user/delTicket?userId="+userId)
   }
+
 }
