@@ -53,6 +53,7 @@
             登录</button>
         </div>
       </div>
+      <v-dialog/>
     </div>
 </template>
 
@@ -77,27 +78,27 @@
     methods: {
       register() {
         if(!this.user.username) {
-          alert("用户名不能为空")
+          this.warn('用户名不能为空')
           return;
         }
         if(!this.user.nickname) {
-          alert("昵称不能为空")
+          this.warn("昵称不能为空")
           return;
         }
         if(!this.user.cellphone) {
-          alert("手机号不能为空")
+          this.warn("手机号不能为空")
           return;
         }
         if(!this.user.mailbox) {
-          alert("邮箱不能为空")
+          this.warn("邮箱不能为空")
           return;
         }
         if(!this.user.rawPwd) {
-          alert("密码不能为空")
+          this.warn("密码不能为空")
           return;
         }
         if(!this.user.city) {
-          alert("所在地不能为空")
+          this.warn("所在地不能为空")
           return;
         }
         this.user.rawPwd = Buffer.from('konglk'+this.user.rawPwd).toString('base64')
@@ -111,6 +112,9 @@
       doLogin() {
         this.$router.push('/')
       },
+      warn(msg) {
+        this.$modal.show('dialog', {title:'错误', text:msg, buttons: [{title:'关闭'}]})
+      }
     },
   }
 </script>

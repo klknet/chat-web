@@ -5,7 +5,7 @@
         <div>
           <i class="fa fa-search"></i>
           <input class="search-input" type="text" placeholder="搜索"/>
-          <span class="add-friend" @click="addFriend">+</span>
+          <span class="add-friend" @click="addGroupChat">+</span>
         </div>
       </div>
       <div class="conversations"
@@ -141,8 +141,6 @@
         </div>
       </div>
     </div>
-    <modals-container>
-    </modals-container>
   </div>
 
 </template>
@@ -224,7 +222,7 @@
         if (!exist) {
           this.getConversation()
         }
-        let send2me = (this.user.userId == message.userId)
+        let selfmessage = (this.user.userId == message.userId)
         for (let i = 0; i < this.conversations.length; i++) {
           let conv = this.conversations[i]
           if (conv.conversationId == message.conversationId) {
@@ -235,8 +233,11 @@
               //处于当前会话下就删掉未读消息数量
               messageRequest.delUnread(message.userId, message.conversationId)
             }
-            this.updateConversation(i, message, !send2me)
+            this.updateConversation(i, message, !selfmessage)
           }
+        }
+        if(!selfmessage) {
+          util.notify(message)
         }
       })
     },
@@ -375,7 +376,7 @@
             ticket: this.user.ticket
           }
           let text = JSON.stringify(data)
-          window.wsChat.send(text)
+          ws.send(text)
           this.message2send = ''
         }
       },
@@ -439,7 +440,7 @@
         }
         return i
       },
-      addFriend: function () {
+      addGroupChat: function () {
         this.$modal.show(CreateGroupChat, {}, {
           draggable: true,
           width: 550,
@@ -736,6 +737,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 150px;
   }
 
   .conversations .dnd {

@@ -1,45 +1,45 @@
 <template>
-  <div class="add-friend">
-    <div class="left">
-      <div class="search">
-        <div class="text-center">
-          <i class="fa fa-search"></i>
-          <input class="search-input" type="text" onfocus="true"
-                 v-model="username" v-on:input="search"/>
+    <div class="add-friend">
+      <div class="left">
+        <div class="search">
+          <div class="text-center">
+            <i class="fa fa-search"></i>
+            <input class="search-input" type="text" onfocus="true"
+                   v-model="username" v-on:input="search"/>
+          </div>
+        </div>
+        <div class="friend-list">
+          <div class="contact-group friend-group" v-for="(value) in users">
+            <div class="group-title">
+              <span>{{value.letter}}</span>
+            </div>
+            <div class="group-content">
+              <ul>
+                <li v-for="(friend) in value.groups">
+                  <img :src="friend.profileUrl" class="avatar"/>
+                  <span class="nickname">{{friend.remark}}</span>
+                  <input type="checkbox" v-bind:id="friend.userId" v-bind:value="friend.userId"
+                         v-model="pickedUsers" class="checkbox"/>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="friend-list">
-        <div class="contact-group friend-group" v-for="(value) in users">
-          <div class="group-title">
-            <span>{{value.letter}}</span>
+      <div class="clear"></div>
+      <div class="right">
+        <div class="close" @click="$modal.hide($parent.name)"><span>x</span></div>
+        <div class="wrapper">
+          <div class="txt">
+            <span>请勾选需要添加的联系人</span>
           </div>
-          <div class="group-content">
-            <ul>
-              <li v-for="(friend) in value.groups">
-                <img :src="friend.profileUrl" class="avatar"/>
-                <span class="nickname">{{friend.remark}}</span>
-                <input type="checkbox" v-bind:id="friend.userId" v-bind:value="friend.userId"
-                       v-model="pickedUsers" class="checkbox"/>
-              </li>
-            </ul>
+          <div class="btn-group">
+            <button class="confirm" @click="confirm">确定</button>
+            <button class="cancel" @click="$modal.hide($parent.name)">取消</button>
           </div>
         </div>
       </div>
     </div>
-    <div class="clear"></div>
-    <div class="right">
-      <div class="close" @click="$modal.hide($parent.name)"><span>x</span></div>
-      <div class="wrapper">
-        <div class="txt">
-          <span>请勾选需要添加的联系人</span>
-        </div>
-        <div class="btn-group">
-          <button class="confirm" @click="confirm">确定</button>
-          <button class="cancel" @click="$modal.hide($parent.name)">取消</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script>
@@ -51,7 +51,7 @@
 
   export default {
     name: 'CreateGroupChat',
-    created() {
+    created () {
       let user = storage.getUser()
       this.users = user.groupFriend
     },
@@ -173,6 +173,7 @@
   .contact-group:not(:first-child) {
     /*border-top: solid 1px #DAD9D9;*/
   }
+
   .group-title {
     padding-left: 16px;
   }

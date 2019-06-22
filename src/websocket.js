@@ -3,15 +3,15 @@ import util from '@/util'
 import storage from '@/storage'
 import config from '@/config'
 
-const wsChat = new WebSocket(config.ws)
-console.log('create websoket connection')
-window.wsChat = wsChat
+let wsChat
 
 export default {
-  connect: function () {
+  connect: function() {
+    wsChat = new WebSocket(config.ws)
     wsChat.onopen = () => {
+      console.log('create websoket connection')
+      authentication()
       ping()
-      vm.$emit('main-authentication')
     }
     wsChat.onclose = (evt) => {
       console.log('connection closed', wsChat.id)
@@ -50,30 +50,11 @@ export default {
           break
         case 2:
           vm.$emit('chat-receive-message', resp.data)
-          if (Notification.permission == 'granted') {
-            notify(resp.data)
-          } else {
-            Notification.requestPermission().then(function (permission) {
-              if (permission == 'granted') {
-                notify(resp.data)
-              }
-            })
-          }
           break
       }
     }
 
-    //浏览器通知消息
-    function notify (message) {
-      let notify = new Notification('收到一条新消息', {
-        body: message.content,
-        tag: 'newMessage',
 
-      })
-      setTimeout(function () {
-        notify.close()
-      }, 8000)
-    }
 
     function ping () {
       let req = {
@@ -82,12 +63,32 @@ export default {
       }
       let ping = JSON.stringify(req)
       setTimeout(() => {
-        window.wsChat.send(ping)
+        wsChat.send(ping)
       }, 15000)
+    }
+
+    function authentication() {
+      console.log('auth')
+      let user = storage.getUser()
+      let auth = {
+        userId: user.userId
+      }
+      let req = {
+        type: 1,
+        ticket: user.ticket,
+        data: JSON.stringify(auth)
+      }
+      wsChat.send(JSON.stringify(req))
     }
   },
 
   send: function (data) {
     wsChat.send(data)
-  }
+  },
+
+  close: function () {
+    wsChat.close()
+  },
+
+
 }

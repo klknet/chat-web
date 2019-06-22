@@ -122,8 +122,6 @@
         </div>
       </div>
     </div>
-    <modals-container>
-    </modals-container>
   </div>
 </template>
 

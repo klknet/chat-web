@@ -15,6 +15,7 @@
     </div>
     <div class="thumbnail" v-show="!display" @click="show">
     </div>
+    <modals-container/>
   </div>
 </template>
 
@@ -48,9 +49,7 @@
 
     },
     mounted () {
-      vm.$on('main-authentication', data => {
-        this.authentication()
-      })
+
     },
     methods: {
       clear() {
@@ -58,7 +57,7 @@
       },
       closeWin: function () {
         userRequest.delTicket(this.user.userId)
-        window.wsChat.close()
+        ws.close()
         storage.removeUser()
 
       },
@@ -70,17 +69,6 @@
       },
       show: function () {
         this.display = true
-      },
-      authentication: function () {
-        let auth = {
-          userId: this.user.userId
-        }
-        let req = {
-          type: 1,
-          ticket: this.user.ticket,
-          data: JSON.stringify(auth)
-        }
-        wsChat.send(JSON.stringify(req))
       }
 
     }

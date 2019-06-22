@@ -91,5 +91,29 @@ export default {
     return decryptedStr.toString();
   },
 
+  notify(message) {
+    //浏览器通知消息
+    function notify (message) {
+      let notify = new Notification('收到一条新消息', {
+        body: message.content,
+        tag: 'newMessage',
+
+      })
+      setTimeout(function () {
+        notify.close()
+      }, 8000)
+    }
+
+    if (Notification.permission == 'granted') {
+      notify(message)
+    } else {
+      Notification.requestPermission().then(function (permission) {
+        if (permission == 'granted') {
+          notify(message)
+        }
+      })
+    }
+  },
+
 
 }

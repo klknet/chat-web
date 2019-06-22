@@ -7,11 +7,13 @@ import VModal from 'vue-js-modal'
 
 Vue.config.productionTip = false
 
-Vue.use(VModal, { dynamic: true, dynamicDefaults: {clickToClose: false}})
+Vue.use(VModal, { dialog: true, dynamic: true, dynamicDefaults: {clickToClose: false}})
 /* eslint-disable no-new */
-new Vue({
+const app = new Vue({
   el: '#app',
   router,
   components: { App },
   template: '<App/>'
 })
+
+VModal.rootInstance = app
