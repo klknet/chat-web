@@ -33,7 +33,7 @@
                 <li v-for="(friend) in value.groups" @click="select(map[friend.userId], friend.userId)"
                     :class="{active: cur === map[friend.userId]}"
                     @contextmenu.prevent="menu(friend.userId, $event)">
-                  <img :src="friend.profileUrl" class="avatar"/>
+                  <img :src="fmtImg(friend.profileUrl)" class="avatar"/>
                   <span class="notation">{{friend.remark}}</span>
                 </li>
               </ul>
@@ -65,7 +65,7 @@
             <li v-for="(friend, index) in newFriends">
               <div class="friend-row">
                 <div>
-                  <img :src="friend.profileUrl" class="avatar"/>
+                  <img :src="fmtImg(friend.profileUrl)" class="avatar"/>
                 </div>
                 <div>
                   <span>{{friend.username}}</span>
@@ -96,7 +96,7 @@
             </div>
           </div>
           <div>
-            <img class="info-img" :src="friend.profileUrl"/>
+            <img class="info-img" :src="fmtImg(friend.profileUrl)"/>
           </div>
         </div>
         <div class="info-chunk">
@@ -133,6 +133,7 @@
   import convRequest from '../conversation'
   import vm from '@/event'
   import AddFriend from './AddFriend'
+  import config from '@/config'
 
   export default {
     name: 'Roster',
@@ -259,7 +260,14 @@
           this.buildMap()
           this.friend = {}
         })
-      }
+      },
+      fmtImg(id) {
+        if(!id)
+          return ""
+        if(id.startsWith("http"))
+          return id
+        return 'http://'+config.host+config.context+"/file/img?id="+id
+      },
     }
   }
 </script>

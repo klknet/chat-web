@@ -16,7 +16,7 @@
             <div class="group-content">
               <ul>
                 <li v-for="(friend) in value.groups">
-                  <img :src="friend.profileUrl" class="avatar"/>
+                  <img :src="fmtImg(friend.profileUrl)" class="avatar"/>
                   <span class="nickname">{{friend.remark}}</span>
                   <input type="checkbox" v-bind:id="friend.userId" v-bind:value="friend.userId"
                          v-model="pickedUsers" class="checkbox"/>
@@ -48,6 +48,7 @@
   import util from '../util'
   import userRequest from '../user'
   import convRequest from '../conversation'
+  import config from '@/config'
 
   export default {
     name: 'CreateGroupChat',
@@ -81,6 +82,13 @@
           })
           this.$modal.hide(this.$parent.name)
         }
+      },
+      fmtImg(id) {
+        if(!id)
+          return ""
+        if(id.startsWith("http"))
+          return id
+        return 'http://'+config.host+config.context+"/file/img?id="+id
       },
     }
   }

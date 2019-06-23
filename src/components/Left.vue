@@ -3,7 +3,7 @@
     <ul class="">
       <li>
         <a>
-          <img id="profile" :src="user.profileUrl">
+          <img id="profile" :src="fmtImg(user.profileUrl)">
         </a>
       </li>
 
@@ -28,6 +28,7 @@
 
 <script>
   import vm from '@/event'
+  import config from '@/config'
 
   let map = [
     ['p1', 'p1-1'], ['p2', 'p2-1'], ['p3', 'p3-1']
@@ -95,6 +96,11 @@
         if (i == 2) {
           return this.collectorCount>0
         }
+      },
+      fmtImg(id) {
+        if(id.startsWith("http"))
+          return id
+        return 'http://'+config.host+config.context+"/file/img?id="+id
       },
     }
   }

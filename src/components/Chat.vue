@@ -20,7 +20,7 @@
                 v-bind:class="{active: cur===index, top: conversation.top}">
               <div>
               <span class="profile">
-                  <img v-bind:src="getProfileUrl(conversation)">
+                  <img v-bind:src="fmtImg(conversation.profileUrl)">
                   <a><span :class="{'badge': conversation.unreadCount>0}" v-show="conversation.unreadCount>0">
                       {{conversation.unreadCount>99?'99+':conversation.unreadCount}}
                   </span></a>
@@ -83,7 +83,7 @@
                 <span class="oldest-time">{{formatDate(message.createTime)}}</span>
               </div>
               <div class="img-msg" v-if="message.userId==user.userId">
-                <a class="myself"><img v-bind:src="user.profileUrl"></a>
+                <a class="myself"><img v-bind:src="fmtImg(user.profileUrl)"></a>
                 <div v-if="message.type==3">
                   <a class="myself-content" @click="imageEnlarge($event, message.destId)"><img
                     :src="imgPrefix+'/'+message.content"></a>
@@ -94,10 +94,10 @@
               </div>
               <div class="img-msg" v-else>
                 <template v-if="message.chatType === 0">
-                  <a class="other-person"><img v-bind:src="chatPerson.profileUrl"></a>
+                  <a class="other-person"><img v-bind:src="fmtImg(chatPerson.profileUrl)"></a>
                 </template>
                 <template v-else>
-                  <a class="other-person"><img v-bind:src="groupChatUrl(message, info.conv).profileUrl"></a>
+                  <a class="other-person"><img v-bind:src="fmtImg(groupChatUrl(message, info.conv).profileUrl)"></a>
                   <span class="nickname ">{{groupChatUrl(message, info.conv).nickname}}</span>
                 </template>
                 <template v-if="message.type == 0">
@@ -231,7 +231,7 @@
               vm.$emit('left-unread-num', 0, 1)
             } else {
               //处于当前会话下就删掉未读消息数量
-              messageRequest.delUnread(message.userId, message.conversationId)
+              messageRequest.delUnread(this.user.userId, message.conversationId)
             }
             this.updateConversation(i, message, !selfmessage)
           }
@@ -560,6 +560,11 @@
           return conv.profileUrl
         }
         return 'http://'+config.host+config.context+"/file/img?id="+conv.profileUrl
+      },
+      fmtImg(id) {
+        if(id.startsWith("http"))
+          return id
+        return 'http://'+config.host+config.context+"/file/img?id="+id
       },
       //群聊成员头像
       groupChatUrl(message, conv) {
