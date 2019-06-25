@@ -59,6 +59,7 @@
 
 <script>
   import axios from '@/request'
+  import util from '@/util'
 
   export default {
     name: 'Register',
@@ -101,7 +102,7 @@
           this.warn("所在地不能为空")
           return;
         }
-        this.user.rawPwd = Buffer.from('konglk'+this.user.rawPwd).toString('base64')
+        this.user.rawPwd = util.encrypt(this.user.rawPwd)
         axios.post('/user/add', this.user, {
           headers: {
             token: '6c766178-4eef-11e9-89c1-40a3cc5c760e',
