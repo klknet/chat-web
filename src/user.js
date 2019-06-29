@@ -74,6 +74,12 @@ export default {
    */
   delTicket: function (userId) {
     axios.delete("/user/delTicket?userId="+userId)
+  },
+  /*
+  更新好友昵称
+   */
+  updateNotename: function (userId, destId, notename) {
+    return axios.put('/user/setNotename?userId='+userId+'&destId='+destId+"&notename="+notename)
   }
 
 }

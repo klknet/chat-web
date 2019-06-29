@@ -103,7 +103,10 @@
           <div>
             <div class="detail-row">
               <span class="detail-title">备&nbsp;&nbsp;&nbsp;注</span>
-              <span class="detail-value">{{friend.remark}}</span>
+              <div @click.stop="editName" >
+                <span class="remark" v-show="!inEdit">{{friend.remark}}</span>
+                <input class="detail-input" v-show="inEdit" v-model="prevValue.remark"/>
+              </div>
             </div>
             <div class="detail-row">
               <span class="detail-title">地&nbsp;&nbsp;&nbsp;区</span>
@@ -147,6 +150,11 @@
         delIdx: -1,
         menuStyle: {},
         newFriends: [],
+        inEdit: false,
+        prevValue: {
+          userId:'',
+          remark:'',
+        },
       }
     },
     created () {
@@ -242,6 +250,13 @@
       },
       hideMenu () {
         this.menuStyle.display = 'none'
+        this.inEdit = false
+        if(this.prevValue.remark) {
+          console.log(this.prevValue.remark)
+          userRequest.updateNotename(this.user.userId, this.prevValue.userId, this.prevValue.remark)
+          this.prevValue.userId = ''
+          this.prevValue.remark = ''
+        }
       },
       remove () {
         if (this.delIdx != -1) {
@@ -258,7 +273,7 @@
           storage.setUser(user)
           this.user = user
           this.buildMap()
-          this.friend = {}
+          // this.friend = {}
         })
       },
       fmtImg(id) {
@@ -267,6 +282,11 @@
         if(id.startsWith("http"))
           return id
         return 'http://'+config.host+config.context+"/file/img?id="+id
+      },
+      editName() {
+        this.prevValue.remark = this.friend.remark
+        this.prevValue.userId = this.friend. userId
+        this.inEdit = true
       },
     }
   }
@@ -484,7 +504,24 @@
     width: 70px;
   }
 
-  .friend-info .detail-value {
+  .friend-info .remark:hover {
+    background-color: #ECEEF0;
+    border: solid 1px #ddd;
+    padding: 2px 5px 2px 2px;
+    cursor: pointer;
+  }
+
+  .detail-row div {
+    width: 100px;
+    display: inline-block;
+  }
+
+  .detail-input{
+    background-color: #F2F2F2;
+    border-left: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: solid 1px #000000;
   }
 
   .info-chunk .info-send {

@@ -47,6 +47,10 @@ export default {
           else if (resp.code == 80004) {
             vm.$emit('chat-get-conversation')
           }
+          else if(resp.code == 80005) {
+            vm.$emit('chat-get-conversation')
+            vm.$emit('roster-fresh-friend')
+          }
           break
         case 2:
           vm.$emit('chat-receive-message', resp.data)
