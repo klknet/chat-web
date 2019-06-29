@@ -4,7 +4,7 @@
 
 const path = require('path')
 
-var profile = process.env.NODEJS_PROFILE || 'dev'
+var profile = process.env.NODE_PROFILE || 'dev'
 console.log(profile)
 
 module.exports = {
