@@ -4,6 +4,9 @@
 
 const path = require('path')
 
+var profile = process.env.NODEJS_PROFILE || 'dev'
+console.log(profile)
+
 module.exports = {
   dev: {
 
@@ -72,5 +75,40 @@ module.exports = {
     // `npm run build --report`
     // Set to `true` or `false` to always turn it on or off
     bundleAnalyzerReport: process.env.npm_config_report
+  },
+
+  profile: function () {
+
+    var home = {
+      host: '192.168.1.100',
+      protocol: 'http',
+      timeout: 6000,
+      context: '/ims',
+      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+    }
+    var ali = {
+      host: '39.106.133.40',
+      protocol: 'http',
+      timeout: 6000,
+      context: '/ims',
+      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+    }
+    var company = {
+      host: '192.168.183.100',
+      protocol: 'http',
+      timeout: 6000,
+      context: '/ims',
+      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+    }
+    var localhost = {
+      host: 'localhost',
+      protocol: 'http',
+      timeout: 6000,
+      context: '/ims',
+      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+    }
+
+    return profile == 'ali' ? ali : profile == 'home' ? home : profile == 'company' ? company : localhost
   }
+
 }
