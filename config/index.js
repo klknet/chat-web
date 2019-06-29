@@ -84,28 +84,28 @@ module.exports = {
       protocol: 'http',
       timeout: 6000,
       context: '/ims',
-      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+      ws: 'ws://192.168.1.100:8080/ims/ws/chat'
     }
     var ali = {
       host: '39.106.133.40',
       protocol: 'http',
       timeout: 6000,
       context: '/ims',
-      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+      ws: 'ws://39.106.133.40:8080/ims/ws/chat'
     }
     var company = {
       host: '192.168.183.100',
       protocol: 'http',
       timeout: 6000,
       context: '/ims',
-      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+      ws: 'ws://192.168.183.100:8080/ims/ws/chat'
     }
     var localhost = {
       host: 'localhost',
       protocol: 'http',
       timeout: 6000,
       context: '/ims',
-      ws: 'ws://' + this.host + ':8080/ims/ws/chat'
+      ws: 'ws://localhost:8080/ims/ws/chat'
     }
 
     return profile == 'ali' ? ali : profile == 'home' ? home : profile == 'company' ? company : localhost
