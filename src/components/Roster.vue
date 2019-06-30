@@ -105,7 +105,7 @@
               <span class="detail-title">备&nbsp;&nbsp;&nbsp;注</span>
               <div @click.stop="editName" >
                 <span class="remark" v-show="!inEdit">{{friend.remark}}</span>
-                <input class="detail-input" v-show="inEdit" v-model="prevValue.remark"/>
+                <input class="detail-input" v-show="inEdit" ref="remark" v-model="prevValue.remark"/>
               </div>
             </div>
             <div class="detail-row">
@@ -185,14 +185,15 @@
         let li_index = 0
         this.map[this.newFriendKey] = li_index++
         let friendGroup = this.user.groupFriend
-        for (let i in friendGroup) {
+        for (let i=0; i<friendGroup.length; i++) {
           let friends = friendGroup[i].groups
-          for (let i in friends) {
-            this.map[friends[i].userId] = li_index++
+          for (let j=0; j<friends.length; j++) {
+            this.map[friends[j].userId] = li_index++
           }
         }
       },
       select (curI, key) {
+        // console.log(curI, key)
         this.cur = curI
         for (let i in this.user.friends) {
           if (key === this.user.friends[i].userId) {
@@ -202,19 +203,8 @@
       },
       sendMessage () {
         let destId = this.friend.userId
-        var conversations = storage.getConversation()
-        for (let i in conversations) {
-          if (conversations[i].destId == destId) {
-            this.$router.push({name: 'Chat', params: {idx: i}})
-            vm.$emit('navIdx', 0)
-            return
-          }
-        }
-        convRequest.buildConversation(this.user.userId, destId)
-          .then(res => {
-            this.$router.push({name: 'Chat', params: {idx: '0', conv: res.data}})
-            vm.$emit('navIdx', 0)
-          })
+        this.$router.push({name: 'Chat', params: {destId: destId}})
+        vm.$emit('navIdx', 0)
       },
       accept (objectId) {
         let self = this
@@ -273,20 +263,19 @@
           storage.setUser(user)
           this.user = user
           this.buildMap()
-          // this.friend = {}
+          if(this.friend.userId) {
+            this.select(this.map[this.friend.userId], this.friend.userId)
+          }
         })
       },
       fmtImg(id) {
-        if(!id)
-          return ""
-        if(id.startsWith("http"))
-          return id
-        return 'http://'+config.host+config.context+"/file/img?id="+id
+        return util.fmtImg(id)
       },
       editName() {
         this.prevValue.remark = this.friend.remark
         this.prevValue.userId = this.friend. userId
         this.inEdit = true
+        this.$refs.remark.focus()
       },
     }
   }

@@ -8,10 +8,8 @@
           <span class="add-friend" @click="addGroupChat">+</span>
         </div>
       </div>
-      <div class="conversations"
-           @mouseenter="convEnter"
-           @mouseleave="convLeave" @scroll="convScroll">
-        <div :class="{scrollbar: convShow}" :style="convStyle"></div>
+      <div class="conversations">
+        <div></div>
         <div class="inner">
           <ul>
             <li v-for="(conversation, index) in conversations"
@@ -66,9 +64,8 @@
       <div class="chat-area"
            :class="{'chat-active': cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId}"
            v-for="(info, i) in messageMap"
-           v-show="cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId"
-           @mouseenter="chatEnter" @mouseleave="chatLeave" @scroll.passive="chatScroll">
-        <div class="scrollbar" v-show="chatShow" :style="chatStyle" style="height: 45px;"></div>
+           v-show="cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId">
+        <div style="height: 45px;"></div>
         <div @scroll.passive="scrollEvent" class="chat-inner">
           <ul>
             <li v-for="(message,index) in info.messages">
@@ -187,21 +184,34 @@
     },
     activated () {
       //组件切换时触发
+      console.log('activited')
       let params = this.$route.params
-      if (params.idx != undefined) {
-        if (params.conv != undefined) {
-          this.conversations.unshift(params.conv)
-          this.addConversation(params.conv)
-          storage.setConversation(this.conversations)
+      if (params.destId != undefined) {
+        for (let i = 0; i < this.conversations.length; i++) {
+          if (this.conversations[i].destId == params.destId) {
+            this.show(this.conversations[i], i)
+            return
+          }
         }
-        let idx = parseInt(this.$route.params.idx)
-        this.show(this.conversations[idx], idx)
+        convRequest.buildConversation(this.user.userId, params.destId)
+          .then(res => {
+            this.getConversation()
+            this.show(res.data, this.indexOfConversation(res.data))
+          })
       }
     },
-    mounted() {
+    mounted () {
       //更新会话列表
       vm.$on('chat-get-conversation', data => {
+        console.log('cur=', this.cur)
+        let conv = null
+        if (this.cur >= 0) {
+          conv = this.conversations[this.cur]
+        }
         this.getConversation()
+        if (conv != null) {
+          this.cur = this.indexOfConversation(conv)
+        }
       })
       //处理新消息
       vm.$on('chat-receive-message', data => {
@@ -226,7 +236,7 @@
         for (let i = 0; i < this.conversations.length; i++) {
           let conv = this.conversations[i]
           if (conv.conversationId == message.conversationId) {
-            if(this.cur != i) {
+            if (this.cur != i) {
               conv.unreadCount += 1
               vm.$emit('left-unread-num', 0, 1)
             } else {
@@ -236,7 +246,7 @@
             this.updateConversation(i, message, !selfmessage)
           }
         }
-        if(!selfmessage) {
+        if (!selfmessage) {
           util.notify(message)
         }
       })
@@ -254,18 +264,21 @@
       },
       //获取会话列表
       getConversation () {
+        console.log('invoke get conversations')
         convRequest.getConversation(this.user.userId).then(res => {
           this.conversations = res.data
           this.buildMessageMap(res.data)
           storage.setConversation(res.data)
           let total = 0
-          for(let conv of res.data)
+          for (let conv of res.data) {
             total += conv.unreadCount
+          }
           vm.$emit('left-unread-num', 0, total)
         })
       },
       //构建messageMap
       buildMessageMap (conversations) {
+        this.messageMap.length = 0
         for (let conv of conversations) {
           let info = {}
           info.messages = []
@@ -277,7 +290,7 @@
       },
       //移除messageMap里的会话引用
       removeMapRef (convId) {
-        for (let i in this.messageMap) {
+        for (let i = 0; i < this.messageMap.length; i++) {
           let info = this.messageMap[i]
           if (info.conversationId === convId) {
             this.messageMap.splice(i, 1)
@@ -299,13 +312,13 @@
       //点击会话，显示历史消息
       show (c, idx) {
         let conv = this.conversations[idx]
-        if(conv.unreadCount && conv.unreadCount > 0) {
+        if (conv.unreadCount && conv.unreadCount > 0) {
           vm.$emit('left-unread-num', 0, -conv.unreadCount)
           messageRequest.delUnread(this.user.userId, conv.conversationId)
         }
         conv.unreadCount = 0
         this.chatPerson = {
-          notename: c.notename,
+          notename: c.notename + (conv.type == 1 ? '（' + conv.groupChat.members.length + '）' : ''),
           destId: c.destId,
           profileUrl: c.profileUrl
         }
@@ -398,7 +411,7 @@
           }
           this.conversations.splice(idx, 1)
           this.conversations.splice(i, 0, conv)
-          if(stay) {
+          if (stay) {
             this.cur = this.indexOfConversation(curConv)
           } else if (this.cur != i) {
             console.log(this.cur, i)
@@ -408,8 +421,8 @@
       },
       //会话索引
       indexOfConversation: function (conv) {
-        let i=0
-        for (; i<this.conversations.length; i++) {
+        let i = 0
+        for (; i < this.conversations.length; i++) {
           if (this.conversations[i].id == conv.id) {
             return i
           }
@@ -419,7 +432,7 @@
       //非置顶会话index
       noTopIndex: function () {
         let i = 0
-        for (i=0; i<this.conversations.length; i++) {
+        for (i = 0; i < this.conversations.length; i++) {
           if (!this.conversations[i].top) {
             break
           }
@@ -429,7 +442,7 @@
       //比conv time早的会话索引
       earlyConversationIndex: function (conv) {
         let i = 0
-        for (i=0; i<this.conversations.length; i++) {
+        for (i = 0; i < this.conversations.length; i++) {
           let cur = this.conversations[i]
           if (cur.top) {
             continue
@@ -448,52 +461,6 @@
           clickToClose: false,
         })
       },
-      convEnter: function (event) {
-        let target = event.srcElement
-        let inner = target.lastChild
-        if (inner.clientHeight > target.clientHeight) {
-          this.convShow = true
-        }
-      },
-      convLeave: function (event) {
-        this.convShow = false
-      },
-      //会话列表滚动事件
-      convScroll: lodash.debounce(function (event) {
-        let target = event.srcElement
-        let ul = target.lastChild
-        let h = target.clientHeight
-        let scrollTop = target.scrollTop
-        let ulHeight = ul.clientHeight - h
-        let rate = scrollTop / ulHeight
-        let offset = rate * h
-        let cur = Math.min(scrollTop + offset, ul.clientHeight - 17)
-        console.log(cur)
-        this.convStyle.top = cur + 'px'
-      }, 50),
-      chatEnter: function (event) {
-        let target = event.srcElement
-        let inner = target.lastChild
-        if (inner.clientHeight > target.clientHeight) {
-          this.chatShow = true
-        }
-      },
-      chatLeave: function (event) {
-        this.chatShow = false
-      },
-      //消息列表滚动事件
-      chatScroll: lodash.debounce(function (event) {
-        let target = event.srcElement
-        let inner = target.lastChild
-        let bar = target.firstChild
-        let h = target.clientHeight
-        let scrollTop = target.scrollTop
-        let innerHeight = inner.clientHeight - h
-        let rate = scrollTop / innerHeight
-        let offset = rate * h
-        let cur = Math.floor(Math.min(scrollTop + offset, inner.clientHeight - 45))
-        bar.style.top = cur + 'px'
-      }, 50),
       //置顶、取消置顶
       top: function () {
         if (this.delIdx >= 0) {
@@ -511,7 +478,7 @@
                 console.log(i)
                 if (this.delIdx != i) {
                   this.conversations.splice(this.delIdx, 1)
-                  this.conversations.splice(i==this.conversations.length? i : i-1, 0, conv)
+                  this.conversations.splice(i == this.conversations.length ? i : i - 1, 0, conv)
                 }
               } else {
                 //置顶
@@ -555,22 +522,20 @@
         }
       },
       //群聊图片地址拼接
-      getProfileUrl(conv) {
-        if(conv.type == 0) {
+      getProfileUrl (conv) {
+        if (conv.type == 0) {
           return conv.profileUrl
         }
-        return 'http://'+config.host+config.context+"/file/img?id="+conv.profileUrl
+        return 'http://' + config.host + config.context + '/file/img?id=' + conv.profileUrl
       },
-      fmtImg(id) {
-        if(id.startsWith("http"))
-          return id
-        return 'http://'+config.host+config.context+"/file/img?id="+id
+      fmtImg (id) {
+        return util.fmtImg(id)
       },
       //群聊成员头像
-      groupChatUrl(message, conv) {
-        if(conv.groupChat) {
-          for(let member of conv.groupChat.members) {
-            if (member.userId === message.userId){
+      groupChatUrl (message, conv) {
+        if (conv.groupChat) {
+          for (let member of conv.groupChat.members) {
+            if (member.userId === message.userId) {
               return member
             }
           }
@@ -703,18 +668,6 @@
     overflow-y: scroll;
     overflow-x: hidden;
     position: relative;
-  }
-
-  .scrollbar {
-    width: 7px;
-    height: 18px;
-    background-color: #D2D2D2;
-    position: absolute;
-    right: 20px;
-    border: solid 0.5px #D2D2D2;
-    border-radius: 9px;
-    top: 0;
-    z-index: 999;
   }
 
   .inner {
@@ -902,11 +855,11 @@
     margin-top: 13px;
   }
 
-  .img-msg .nickname{
+  .img-msg .nickname {
     position: absolute;
     top: -8px;
     left: 45px;
-    font-size:0.85em;
+    font-size: 0.85em;
     color: #C9B2B2;
   }
 

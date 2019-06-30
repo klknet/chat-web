@@ -42,11 +42,6 @@ let storage = {
     window.user.conversations = conversations
     this.setUser(window.user)
   },
-  insertConversation: function(conv) {
-    if(!window.user)
-      window.user = this.getUser()
-    window.user.conversations.unshift(conv, 0)
-  },
   getConversation: function () {
     if(!window.user)
       window.user = this.getUser()

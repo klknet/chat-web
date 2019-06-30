@@ -4,6 +4,7 @@ import pinyin from 'js-pinyin'
 import CryptoJS from 'crypto-js'
 import axios from '@/request'
 import storage from '@/storage'
+import config from '@/config'
 
 
 export default {
@@ -113,6 +114,14 @@ export default {
         }
       })
     }
+  },
+
+  fmtImg(id) {
+    if(!id)
+      return ""
+    if(id.startsWith("http"))
+      return id
+    return 'http://'+config.host+config.context+"/file/img?id="+id
   },
 
 
