@@ -41,19 +41,7 @@
           </ul>
         </div>
       </div>
-      <div class="conv-menu" :style="menuStyle">
-        <ul>
-          <li @click="top">
-            <a>{{isTop?'取消置顶':'置顶'}}</a>
-          </li>
-          <li @click="dnd">
-            <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
-          </li>
-          <li class="divider" @click="remove">
-            <a>删除聊天</a>
-          </li>
-        </ul>
-      </div>
+
     </div>
 
     <div class="right">
@@ -80,13 +68,18 @@
                 <span class="oldest-time">{{formatDate(message.createTime)}}</span>
               </div>
               <div class="img-msg" v-if="message.userId==user.userId">
-                <a class="myself"><img v-bind:src="fmtImg(user.profileUrl)"></a>
-                <div v-if="message.type==3">
-                  <a class="myself-content" @click="imageEnlarge($event, message.destId)"><img
-                    :src="imgPrefix+'/'+message.content"></a>
+                <div v-if="message.type==5" class="revocation">
+                    <span>您撤回了一条消息</span>
                 </div>
-                <div v-if="message.type==0">
-                  <span class="myself">{{message.content}}</span>
+                <div v-else>
+                  <a class="myself"><img v-bind:src="fmtImg(user.profileUrl)"></a>
+                  <div v-if="message.type==3">
+                    <a class="myself-content" @contextmenu.prevent="msgMenu(message, $event)"><img
+                      :src="imgPrefix+'/'+message.content"></a>
+                  </div>
+                  <div v-else-if="message.type==0">
+                    <span class="myself" @contextmenu.prevent="msgMenu(message, $event)">{{message.content}}</span>
+                  </div>
                 </div>
               </div>
               <div class="img-msg" v-else>
@@ -138,6 +131,27 @@
         </div>
       </div>
     </div>
+
+    <div class="conv-menu" :style="menuStyle">
+      <ul>
+        <li @click="top">
+          <a>{{isTop?'取消置顶':'置顶'}}</a>
+        </li>
+        <li @click="dnd">
+          <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
+        </li>
+        <li class="divider" @click="remove">
+          <a>删除聊天</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="msg-menu" :style="msgMenuStyle">
+      <ul>
+        <li><a>复制</a></li>
+        <li class="divider" @click="revocation(checkedMessageId)"><a>撤回</a></li>
+      </ul>
+    </div>
   </div>
 
 </template>
@@ -164,20 +178,14 @@
         messageMap: [],
         cur: -1,
         delIdx: -1,
-        convShow: false,
-        convStyle: {
-          top: '0px',
-        },
-        chatShow: false,
-        chatStyle: {
-          top: '0px',
-        },
         menuStyle: {},
+        msgMenuStyle: {},
         filepaths: [],
         message2send: '',
         chatPerson: {
           notename: ''
         },
+        checkedMessageId:'',
         isTop: false,
         isDnd: false,
       }
@@ -249,6 +257,11 @@
         if (!selfmessage) {
           util.notify(message)
         }
+      })
+
+      vm.$on('chat-revocation-message', data => {
+        console.log('revocation msg', data)
+
       })
     },
     created () {
@@ -324,7 +337,6 @@
         }
         for (let info of this.messageMap) {
           if (info.conv.conversationId == conv.conversationId) {
-            this.chatStyle.top = '0'
             if (!info.requested) {
               msgRequest.historyMessage(conv.conversationId, conv.createTime, true).then(res => {
                 if (res.data) {
@@ -364,8 +376,19 @@
         }
       },
 
+      msgMenu(msg, e) {
+        this.checkedMessageId = msg.messageId
+        this.msgMenuStyle = {
+          left: e.clientX + 'px',
+          top: e.clientY + 'px',
+          display: 'block'
+        }
+      },
+
       hideMenu () {
         this.menuStyle.display = 'none'
+        this.msgMenuStyle.display = 'none'
+        this.checkedMessageId = ''
       },
       clear () {
         this.hideMenu()
@@ -391,6 +414,27 @@
           let text = JSON.stringify(data)
           ws.send(text)
           this.message2send = ''
+        }
+      },
+      revocation: function() {
+        if(this.checkedMessageId)
+          messageRequest.revocation(this.user.userId, this.checkedMessageId)
+      },
+      //设置撤回消息
+      setRevocation(message) {
+        let convId = message.conversationId
+        let msgId = message.messageId
+        for(let info of this.messageMap) {
+          if (info.conversationId == convId) {
+            let messages = info.messages
+            for (let i=0; i<messages.length; i++) {
+              if (msgId == message[i].messageId) {
+                m.type=5
+                break
+              }
+            }
+            break
+          }
         }
       },
       //更新会话信息
@@ -752,7 +796,7 @@
     background: linear-gradient(to right, #D6D5D5, #D6D6D7, #D5D2D2);
   }
 
-  .conv-menu {
+  .conv-menu, .msg-menu{
     background-color: #ffffff;
     width: 100px;
     font-size: 12px;
@@ -762,16 +806,24 @@
     z-index: 999;
   }
 
-  .conv-menu .divider {
+  .msg-menu {
+    width: 80px;
+  }
+
+  .conv-menu .divider, .msg-menu .divider{
     border-top: solid 1px #e7e7e7;
   }
 
-  .conv-menu li {
+  .conv-menu li, .msg-menu li{
     padding: 5px 20px;
     text-align: left;
   }
 
-  .conv-menu li:hover {
+  .msg-menu li {
+    text-align: center;
+  }
+
+  .conv-menu li:hover, .msg-menu li:hover {
     background-color: #DFDDDB;
   }
 
@@ -792,6 +844,13 @@
 
   .myself, .myself-content {
     float: right;
+  }
+
+  .revocation {
+    text-align: center;
+  }
+  .revocation span {
+    width: 150px;
   }
 
   .other-person, .other-person-content {
@@ -830,11 +889,11 @@
     padding-bottom: 10px;
   }
 
-  .chat-area .oldest-time-area .oldest-time {
+  .chat-area .oldest-time-area .oldest-time, .revocation span {
     background-color: #DADADA;
-    padding: 4px 5px;
+    padding: 5px 8px;
     color: #FFFFFF;
-    font-size: 0.9em;
+    font-size: 0.85em;
   }
 
   .clear {

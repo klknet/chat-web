@@ -11,5 +11,12 @@ export default {
   },
   delUnread: function (userId, id) {
     axios.delete('/message/delUnread?userId='+userId+"&id="+id)
+  },
+  /*
+  撤回消息
+   */
+  revocation: function (userId, msgId) {
+    let url = '/message/revocation?msgId='+msgId+'&userId='+userId
+    axios.put(url)
   }
 }

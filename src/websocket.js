@@ -53,7 +53,11 @@ export default {
           }
           break
         case 2:
-          vm.$emit('chat-receive-message', resp.data)
+          if(resp.code == 70001) {
+            vm.$emit('chat-receive-message', resp.data)
+          }else if(resp.code == 70002) {
+            vm.$emit('chat-revocation-message', JSON.parse(resp.data))
+          }
           break
       }
     }
