@@ -30,8 +30,11 @@
                       <template v-if="conversation.messageType === 0">
                         {{conversation.lastMsg}}
                       </template>
-                      <template v-else-if="conversation.type == 1">
+                      <template v-else-if="conversation.messageType == 1">
                           [图片]
+                      </template>
+                      <template v-else-if="conversation.messageType == 5">
+                          撤回了一条消息
                       </template>
                   </span>
                   <span class="dnd" v-show="conversation.dnd"></span>
@@ -69,7 +72,7 @@
               </div>
               <div class="img-msg" v-if="message.userId==user.userId">
                 <div v-if="message.type==5" class="revocation">
-                    <span>您撤回了一条消息</span>
+                  <span>你撤回了一条消息</span>
                 </div>
                 <div v-else>
                   <a class="myself"><img v-bind:src="fmtImg(user.profileUrl)"></a>
@@ -80,23 +83,30 @@
                   <div v-else-if="message.type==0">
                     <span class="myself" @contextmenu.prevent="msgMenu(message, $event)">{{message.content}}</span>
                   </div>
+
                 </div>
               </div>
               <div class="img-msg" v-else>
-                <template v-if="message.chatType === 0">
-                  <a class="other-person"><img v-bind:src="fmtImg(chatPerson.profileUrl)"></a>
-                </template>
-                <template v-else>
-                  <a class="other-person"><img v-bind:src="fmtImg(groupChatUrl(message, info.conv).profileUrl)"></a>
-                  <span class="nickname ">{{groupChatUrl(message, info.conv).nickname}}</span>
-                </template>
-                <template v-if="message.type == 0">
-                  <span class="other-person" :class="{'group-person': message.chatType == 1}">{{message.content}}</span>
-                </template>
-                <template v-if="message.type == 1">
-                  <a class="other-person-content" @click="imageEnlarge($event, message.destId)"><img
-                    :src="message.content"></a>
-                </template>
+                <div v-if="message.type==5" class="revocation">
+                  <span>{{fmtRevocation(message)}}</span>
+                </div>
+                <div v-else>
+                  <template v-if="message.chatType === 0">
+                    <a class="other-person"><img v-bind:src="fmtImg(chatPerson.profileUrl)"></a>
+                  </template>
+                  <template v-else>
+                    <a class="other-person"><img v-bind:src="fmtImg(groupChatMember(message, info.conv).profileUrl)"></a>
+                    <span class="nickname ">{{groupChatMember(message, info.conv).nickname}}</span>
+                  </template>
+                  <template v-if="message.type == 0">
+                    <span class="other-person"
+                          :class="{'group-person': message.chatType == 1}">{{message.content}}</span>
+                  </template>
+                  <template v-if="message.type == 1">
+                    <a class="other-person-content" @click="imageEnlarge($event, message.destId)"><img
+                      :src="message.content"></a>
+                  </template>
+                </div>
               </div>
               <div class="clear"></div>
             </li>
@@ -185,7 +195,7 @@
         chatPerson: {
           notename: ''
         },
-        checkedMessageId:'',
+        checkedMessageId: '',
         isTop: false,
         isDnd: false,
       }
@@ -261,7 +271,7 @@
 
       vm.$on('chat-revocation-message', data => {
         console.log('revocation msg', data)
-
+        this.setRevocation(data)
       })
     },
     created () {
@@ -376,7 +386,7 @@
         }
       },
 
-      msgMenu(msg, e) {
+      msgMenu (msg, e) {
         this.checkedMessageId = msg.messageId
         this.msgMenuStyle = {
           left: e.clientX + 'px',
@@ -416,26 +426,58 @@
           this.message2send = ''
         }
       },
-      revocation: function() {
-        if(this.checkedMessageId)
+      revocation: function () {
+        if (this.checkedMessageId) {
           messageRequest.revocation(this.user.userId, this.checkedMessageId)
+        }
       },
       //设置撤回消息
-      setRevocation(message) {
+      setRevocation (message) {
         let convId = message.conversationId
         let msgId = message.messageId
-        for(let info of this.messageMap) {
-          if (info.conversationId == convId) {
+        let myself = false
+        for (let info of this.messageMap) {
+          if (info.conv.conversationId == convId) {
             let messages = info.messages
-            for (let i=0; i<messages.length; i++) {
-              if (msgId == message[i].messageId) {
-                m.type=5
+            for (let i = 0; i < messages.length; i++) {
+              if (msgId == messages[i].messageId) {
+                messages[i].type = 5
+                if (this.user.userId == message.userId) {
+                  myself = true
+                  messages[i].content = '你撤回了一条消息'
+                }
+                else {
+                  messages[i].content = message.content
+                }
                 break
               }
             }
             break
           }
         }
+        let idx = this.indexOf(convId)
+        if (idx != -1) {
+          this.conversations[idx].lastMsg = myself ? '你撤回了一条消息' : message.content
+        }
+      },
+      fmtRevocation (message) {
+        if (message.chatType == 0) {
+          for (let i=0; i<this.user.friends.length; i++) {
+            let friend = this.user.friends[i]
+            if (friend.userId == message.userId) {
+              return friend.remark+'撤回了一条消息'
+            }
+          }
+
+        }else {
+          let idx = this.indexOf(message.conversationId)
+          if (idx != -1) {
+            let conv = this.conversations[idx]
+            let member = this.groupChatMember(message, conv)
+            return member.nickname+'撤回了一条消息'
+          }
+        }
+        return '撤回了一条消息'
       },
       //更新会话信息
       updateConversation (idx, message, stay) {
@@ -465,9 +507,12 @@
       },
       //会话索引
       indexOfConversation: function (conv) {
+        this.indexOf(conv.conversationId)
+      },
+      indexOf: function (convId) {
         let i = 0
         for (; i < this.conversations.length; i++) {
-          if (this.conversations[i].id == conv.id) {
+          if (this.conversations[i].conversationId == convId) {
             return i
           }
         }
@@ -576,7 +621,7 @@
         return util.fmtImg(id)
       },
       //群聊成员头像
-      groupChatUrl (message, conv) {
+      groupChatMember (message, conv) {
         if (conv.groupChat) {
           for (let member of conv.groupChat.members) {
             if (member.userId === message.userId) {
@@ -796,7 +841,7 @@
     background: linear-gradient(to right, #D6D5D5, #D6D6D7, #D5D2D2);
   }
 
-  .conv-menu, .msg-menu{
+  .conv-menu, .msg-menu {
     background-color: #ffffff;
     width: 100px;
     font-size: 12px;
@@ -810,11 +855,11 @@
     width: 80px;
   }
 
-  .conv-menu .divider, .msg-menu .divider{
+  .conv-menu .divider, .msg-menu .divider {
     border-top: solid 1px #e7e7e7;
   }
 
-  .conv-menu li, .msg-menu li{
+  .conv-menu li, .msg-menu li {
     padding: 5px 20px;
     text-align: left;
   }
@@ -849,6 +894,7 @@
   .revocation {
     text-align: center;
   }
+
   .revocation span {
     width: 150px;
   }
