@@ -159,7 +159,11 @@
     <div class="msg-menu" :style="msgMenuStyle">
       <ul>
         <li><a>复制</a></li>
-        <li class="divider" @click="revocation(checkedMessageId)"><a>撤回</a></li>
+        <template v-if="showRevocation">
+          <li class="divider" @click="revocation"><a>撤回</a></li>
+        </template>
+        <li @click="ref">引用</li>
+        <li @click="delMsg">删除</li>
       </ul>
     </div>
   </div>
@@ -195,9 +199,10 @@
         chatPerson: {
           notename: ''
         },
-        checkedMessageId: '',
+        checkedMessage: {},
         isTop: false,
         isDnd: false,
+        showRevocation: true,
       }
     },
     activated () {
@@ -270,8 +275,11 @@
       })
 
       vm.$on('chat-revocation-message', data => {
-        console.log('revocation msg', data)
-        this.setRevocation(data)
+        this.revocationNotify(data)
+      })
+
+      vm.$on('chat-delete-message', data=> {
+        this.deleteMsgNotify(data)
       })
     },
     created () {
@@ -387,7 +395,10 @@
       },
 
       msgMenu (msg, e) {
-        this.checkedMessageId = msg.messageId
+        if(new Date(msg.createTime).getTime() - new Date().getTime()) {
+          this.showRevocation = false
+        }
+        this.checkedMessage = msg
         this.msgMenuStyle = {
           left: e.clientX + 'px',
           top: e.clientY + 'px',
@@ -398,7 +409,8 @@
       hideMenu () {
         this.menuStyle.display = 'none'
         this.msgMenuStyle.display = 'none'
-        this.checkedMessageId = ''
+        this.checkedMessage = {}
+        this.revocation = true
       },
       clear () {
         this.hideMenu()
@@ -427,12 +439,32 @@
         }
       },
       revocation: function () {
-        if (this.checkedMessageId) {
-          messageRequest.revocation(this.user.userId, this.checkedMessageId)
+        if (this.checkedMessage.messageId) {
+          messageRequest.revocation(this.user.userId, this.checkedMessage.messageId)
+        }
+      },
+      //删除一条消息
+      deleteMsgNotify (message) {
+        let convId = message.conversationId
+        let msgId = message.messageId
+        let myself = false
+        for (let info of this.messageMap) {
+          if (info.conv.conversationId == convId) {
+            let messages = info.messages
+            let idx = -1
+            for (let i = 0; i < messages.length; i++) {
+              if (msgId == messages[i].messageId) {
+                idx = i
+              }
+            }
+            if (idx >= 0)
+              messages.splice(idx, 1)
+            break
+          }
         }
       },
       //设置撤回消息
-      setRevocation (message) {
+      revocationNotify (message) {
         let convId = message.conversationId
         let msgId = message.messageId
         let myself = false
@@ -478,6 +510,14 @@
           }
         }
         return '撤回了一条消息'
+      },
+      ref() {
+        if(this.checkedMessage.messageId)
+          this.message2send = '「'+this.checkedMessage.content+"」\n- - - - - - - - - - - - - - -\n"
+      },
+      delMsg() {
+        if(this.checkedMessage.messageId)
+          msgRequest.delMsg(this.checkedMessage.messageId)
       },
       //更新会话信息
       updateConversation (idx, message, stay) {

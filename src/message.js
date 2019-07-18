@@ -18,5 +18,12 @@ export default {
   revocation: function (userId, msgId) {
     let url = '/message/revocation?msgId='+msgId+'&userId='+userId
     axios.put(url)
+  },
+  /*
+  删除消息
+   */
+  delMsg: function (msgId) {
+    let url = '/message/delMsg?msgId='+msgId
+    axios.delete(url)
   }
 }

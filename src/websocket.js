@@ -57,6 +57,9 @@ export default {
             vm.$emit('chat-receive-message', resp.data)
           }else if(resp.code == 70002) {
             vm.$emit('chat-revocation-message', JSON.parse(resp.data))
+          }else if(resp.code = 70003) {
+            console.log('delete')
+            vm.$emit('chat-delete-message', JSON.parse(resp.data))
           }
           break
       }
