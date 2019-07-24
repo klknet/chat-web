@@ -185,10 +185,12 @@
         let li_index = 0
         this.map[this.newFriendKey] = li_index++
         let friendGroup = this.user.groupFriend
-        for (let i=0; i<friendGroup.length; i++) {
-          let friends = friendGroup[i].groups
-          for (let j=0; j<friends.length; j++) {
-            this.map[friends[j].userId] = li_index++
+        if (friendGroup) {
+          for (let i=0; i<friendGroup.length; i++) {
+            let friends = friendGroup[i].groups
+            for (let j=0; j<friends.length; j++) {
+              this.map[friends[j].userId] = li_index++
+            }
           }
         }
       },
