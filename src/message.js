@@ -4,9 +4,9 @@ export default {
   /*
   当前时间点之前的50条消息，包含当前消息
    */
-  historyMessage: function (conversationId, createTime, include) {
+  historyMessage: function (conversationId, userId, createTime, include) {
     let url = '/message/prev?cid=' + conversationId + '&createtime='
-      + encodeURIComponent(createTime) + '&include='+include
+      + encodeURIComponent(createTime) + '&include='+include+"&userId="+userId
     return axios.get(url)
   },
   delUnread: function (userId, id) {
@@ -22,8 +22,8 @@ export default {
   /*
   删除消息
    */
-  delMsg: function (msgId) {
-    let url = '/message/delMsg?msgId='+msgId
+  delMsg: function (msgId, userId) {
+    let url = '/message/delMsg?msgId='+msgId+'&userId='+userId
     axios.delete(url)
   }
 }

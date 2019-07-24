@@ -99,11 +99,13 @@
                     <span class="nickname ">{{groupChatMember(message, info.conv).nickname}}</span>
                   </template>
                   <template v-if="message.type == 0">
-                    <span class="other-person"
+                    <span class="other-person" @contextmenu.prevent="msgMenu(message, $event)"
                           :class="{'group-person': message.chatType == 1}">{{message.content}}</span>
                   </template>
                   <template v-if="message.type == 1">
-                    <a class="other-person-content" @click="imageEnlarge($event, message.destId)"><img
+                    <a class="other-person-content"
+                       @contextmenu.prevent="msgMenu(message, $event)"
+                       @click="imageEnlarge($event, message.destId)"><img
                       :src="message.content"></a>
                   </template>
                 </div>
@@ -226,7 +228,6 @@
     mounted () {
       //更新会话列表
       vm.$on('chat-get-conversation', data => {
-        console.log('cur=', this.cur)
         let conv = null
         if (this.cur >= 0) {
           conv = this.conversations[this.cur]
@@ -235,6 +236,12 @@
         if (conv != null) {
           this.cur = this.indexOfConversation(conv)
         }
+        console.log('cur=', this.cur)
+      })
+      vm.$on('chat-update-conversation', data => {
+        let idx = this.indexOfConversation(data)
+        this.conversations[idx] = data
+        storage.setConversation(this.conversations)
       })
       //处理新消息
       vm.$on('chat-receive-message', data => {
@@ -356,7 +363,7 @@
         for (let info of this.messageMap) {
           if (info.conv.conversationId == conv.conversationId) {
             if (!info.requested) {
-              msgRequest.historyMessage(conv.conversationId, conv.createTime, true).then(res => {
+              msgRequest.historyMessage(conv.conversationId, this.user.userId, conv.createTime, true).then(res => {
                 if (res.data) {
                   info.messages = res.data
                   this.cur = idx
@@ -395,9 +402,8 @@
       },
 
       msgMenu (msg, e) {
-        if(new Date(msg.createTime).getTime() - new Date().getTime()) {
-          this.showRevocation = false
-        }
+        let diff = new Date().getTime() - new Date(msg.createTime).getTime()
+        this.showRevocation = diff <= 120000
         this.checkedMessage = msg
         this.msgMenuStyle = {
           left: e.clientX + 'px',
@@ -410,7 +416,7 @@
         this.menuStyle.display = 'none'
         this.msgMenuStyle.display = 'none'
         this.checkedMessage = {}
-        this.revocation = true
+        this.showRevocation = true
       },
       clear () {
         this.hideMenu()
@@ -455,6 +461,7 @@
             for (let i = 0; i < messages.length; i++) {
               if (msgId == messages[i].messageId) {
                 idx = i
+                break
               }
             }
             if (idx >= 0)
@@ -494,12 +501,9 @@
       },
       fmtRevocation (message) {
         if (message.chatType == 0) {
-          for (let i=0; i<this.user.friends.length; i++) {
-            let friend = this.user.friends[i]
-            if (friend.userId == message.userId) {
-              return friend.remark+'撤回了一条消息'
-            }
-          }
+          let idx = this.friendIdx(message.userId)
+          if (idx != -1)
+            return this.user.friends[idx].remark+'撤回了一条消息'
 
         }else {
           let idx = this.indexOf(message.conversationId)
@@ -511,13 +515,29 @@
         }
         return '撤回了一条消息'
       },
+      friendIdx(userId) {
+        for (let i=0; i<this.user.friends.length; i++) {
+          let friend = this.user.friends[i]
+          if (friend.userId == userId) {
+            return i
+          }
+        }
+        return -1
+      },
+      //引用
       ref() {
-        if(this.checkedMessage.messageId)
-          this.message2send = '「'+this.checkedMessage.content+"」\n- - - - - - - - - - - - - - -\n"
+        if(this.checkedMessage.messageId) {
+          if (this.checkedMessage.userId == this.user.userId)
+            this.message2send = '「我： '+this.checkedMessage.content+"」\n- - - - - - - - - - - - - - -\n"
+          else {
+            let idx = this.friendIdx(this.checkedMessage.userId)
+            this.message2send = '「'+this.user.friends[idx].username+'： '+this.checkedMessage.content+"」\n- - - - - - - - - - - - - - -\n"
+          }
+        }
       },
       delMsg() {
         if(this.checkedMessage.messageId)
-          msgRequest.delMsg(this.checkedMessage.messageId)
+          msgRequest.delMsg(this.checkedMessage.messageId, this.user.userId)
       },
       //更新会话信息
       updateConversation (idx, message, stay) {
@@ -546,10 +566,10 @@
         }
       },
       //会话索引
-      indexOfConversation: function (conv) {
-        this.indexOf(conv.conversationId)
+      indexOfConversation (conv) {
+        return this.indexOf(conv.conversationId)
       },
-      indexOf: function (convId) {
+      indexOf (convId) {
         let i = 0
         for (; i < this.conversations.length; i++) {
           if (this.conversations[i].conversationId == convId) {
