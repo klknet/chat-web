@@ -160,7 +160,7 @@
 
     <div class="msg-menu" :style="msgMenuStyle">
       <ul>
-        <li><a>复制</a></li>
+        <li @click="copy"><a>复制</a></li>
         <template v-if="showRevocation">
           <li class="divider" @click="revocation"><a>撤回</a></li>
         </template>
@@ -524,6 +524,9 @@
         }
         return -1
       },
+      copy(e) {
+
+      },
       //引用
       ref() {
         if(this.checkedMessage.messageId) {
@@ -690,8 +693,29 @@
           }
         }
       },
-      paste: function (event) {
-        console.log(event)
+      paste: function (e) {
+        var clipboardData = e.clipboardData
+        if (!(clipboardData && clipboardData.items)) {//是否有粘贴内容
+          return;
+        }
+        for (var i = 0, len = clipboardData.items.length; i < len; i++) {
+          var item = clipboardData.items[i];
+          if (item.kind === "string" && item.type == "text/plain") {
+            item.getAsString((str) => {
+              // str 是获取到的字符串,创建文本框
+              //处理粘贴的文字内容
+              this.message2send += str
+            })
+          } else if (item.kind === "file") {//file 一般是各种截图base64数据
+            var pasteFile = item.getAsFile();
+            // pasteFile就是获取到的文件
+            var reader = new FileReader();
+            reader.onload = function (event) {
+              var base64Img = event.target.result;
+            }; // data url
+            reader.readAsDataURL(pasteFile);
+          }
+        }
       },
       propFile: function () {
 
