@@ -98,7 +98,7 @@ module.exports = {
       protocol: 'http',
       timeout: 6000,
       context: '/ims',
-      ws: 'ws://192.168.183.100:8080/ims/ws/chat'
+      ws: 'ws://192.168.1.100:8080/ims/ws/chat'
     }
     var localhost = {
       host: 'localhost',
