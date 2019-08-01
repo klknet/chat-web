@@ -197,7 +197,7 @@
       select (curI, key) {
         // console.log(curI, key)
         this.cur = curI
-        for (let i in this.user.friends) {
+        for (let i=0; i < this.user.friends.length; i++) {
           if (key === this.user.friends[i].userId) {
             this.friend = this.user.friends[parseInt(i)]
           }

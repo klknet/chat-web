@@ -67,7 +67,7 @@
            :class="{'chat-active': cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId}"
            v-for="(info, i) in messageMap"
            v-show="cur!= -1 && conversations[cur] && info.conv.conversationId===conversations[cur].conversationId">
-        <div style="height: 45px;"></div>
+        <!--<div style="height: 45px;"></div>-->
         <div @scroll.passive="scrollEvent" class="chat-inner">
           <ul>
             <li v-for="(message,index) in info.messages">
@@ -898,6 +898,7 @@
     padding: 10px;
     height: 60px;
     position: relative;
+    overflow: hidden;
   }
 
   .conversations .inner li.active {

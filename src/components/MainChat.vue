@@ -97,9 +97,8 @@
         let fd = new FormData()
         fd.append('file', e.target.files[0])
         fd.append('userId', this.user.userId)
-        userRequest.uploadAvatar(fd).then(data=> {
-          console.log(data)
-          this.user.profileUrl = data
+        userRequest.uploadAvatar(fd).then(res=> {
+          this.user.profileUrl = res.data
           storage.setUser(this.user)
         })
       }
