@@ -1,5 +1,5 @@
 <template>
-  <div class="chat" @click="clear">
+  <div class="chat">
     <div class="median" id="median">
       <div class="search">
         <div>
@@ -9,12 +9,11 @@
         </div>
       </div>
       <div class="conversations">
-        <div></div>
         <div class="inner">
           <ul>
             <li v-for="(conversation, index) in conversations"
                 @click="show(conversation, index)"
-                @contextmenu.prevent="menu(index, $event)"
+                @contextmenu.prevent="convMenu(index, $event)"
                 v-bind:class="{active: cur===index, top: conversation.top}">
               <div>
               <span class="profile">
@@ -43,8 +42,20 @@
             </li>
           </ul>
         </div>
+        <div class="conv-menu" :style="menuStyle">
+          <ul>
+            <li @click="top">
+              <a>{{isTop?'取消置顶':'置顶'}}</a>
+            </li>
+            <li @click="dnd">
+              <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
+            </li>
+            <li class="divider" @click="remove">
+              <a>删除聊天</a>
+            </li>
+          </ul>
+        </div>
       </div>
-
     </div>
 
     <div class="right">
@@ -114,6 +125,17 @@
             </li>
           </ul>
         </div>
+        <div class="msg-menu" :style="msgMenuStyle">
+          <ul>
+            <li @click="copy"><a>复制</a></li>
+            <li class="divider"></li>
+            <template v-if="showRevocation">
+              <li @click="revocation"><a>撤回</a></li>
+            </template>
+            <li @click="ref">引用</li>
+            <li @click="delMsg">删除</li>
+          </ul>
+        </div>
       </div>
 
       <div class="send-area">
@@ -144,30 +166,9 @@
       </div>
     </div>
 
-    <div class="conv-menu" :style="menuStyle">
-      <ul>
-        <li @click="top">
-          <a>{{isTop?'取消置顶':'置顶'}}</a>
-        </li>
-        <li @click="dnd">
-          <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
-        </li>
-        <li class="divider" @click="remove">
-          <a>删除聊天</a>
-        </li>
-      </ul>
-    </div>
 
-    <div class="msg-menu" :style="msgMenuStyle">
-      <ul>
-        <li @click="copy"><a>复制</a></li>
-        <template v-if="showRevocation">
-          <li class="divider" @click="revocation"><a>撤回</a></li>
-        </template>
-        <li @click="ref">引用</li>
-        <li @click="delMsg">删除</li>
-      </ul>
-    </div>
+
+
   </div>
 
 </template>
@@ -288,6 +289,10 @@
       vm.$on('chat-delete-message', data=> {
         this.deleteMsgNotify(data)
       })
+
+      vm.$on('all-clear', () => {
+        this.clear()
+      })
     },
     created () {
       let user = storage.getUser()
@@ -355,8 +360,9 @@
           messageRequest.delUnread(this.user.userId, conv.conversationId)
         }
         conv.unreadCount = 0
+        let num = conv.type == 1 ? '（' + conv.groupChat.members.length + '）' : ''
         this.chatPerson = {
-          notename: c.notename + (conv.type == 1 ? '（' + conv.groupChat.members.length + '）' : ''),
+          notename: c.notename + num,
           destId: c.destId,
           profileUrl: c.profileUrl
         }
@@ -389,14 +395,14 @@
         })
       },
       //右键点击
-      menu (index, e) {
+      convMenu (index, e) {
         this.delIdx = index
         this.isTop = this.conversations[index].top
         this.isDnd = this.conversations[index].dnd
         this.menuStyle = {
-          left: e.clientX + 'px',
-          top: e.clientY + 'px',
-          width: this.isDnd ? '130px' : '100px',
+          left: e.offsetX + 'px',
+          top: e.offsetY + 'px',
+          width: this.isDnd ? '130px' : '120px',
           display: 'block'
         }
       },
@@ -406,10 +412,11 @@
         this.showRevocation = diff <= 120000
         this.checkedMessage = msg
         this.msgMenuStyle = {
-          left: e.clientX + 'px',
-          top: e.clientY + 'px',
+          left: e.pageX + 'px',
+          top: e.pageY + 'px',
           display: 'block'
         }
+        console.log(e)
       },
 
       hideMenu () {
@@ -419,6 +426,7 @@
         this.showRevocation = true
       },
       clear () {
+        console.log('clear chat')
         this.hideMenu()
       },
       //发送消息
@@ -609,7 +617,7 @@
         this.$modal.show(CreateGroupChat, {}, {
           draggable: true,
           width: 550,
-          height: 485,
+          height: 'auto',
           clickToClose: false,
         })
       },
@@ -839,12 +847,13 @@
     height: calc(100% - 65px);
     width: 270px;
     overflow-y: scroll;
-    overflow-x: hidden;
+    /*overflow-x: hidden;*/
     position: relative;
   }
 
   .inner {
     width: 250px;
+    overflow: hidden;
   }
 
   .conversations .nickname {
@@ -885,21 +894,21 @@
     left: 60px;
   }
 
-  .conversations li {
+  .conversations .inner li {
     padding: 10px;
     height: 60px;
     position: relative;
   }
 
-  .conversations li.active {
+  .conversations .inner li.active {
     background-color: #C4C4C4;
   }
 
-  .conversations li:hover {
+  .conversations .inner li:hover {
     background-color: #DFDDDB;
   }
 
-  .conversations li img {
+  .conversations .inner li img {
     width: 40px;
   }
 
@@ -933,6 +942,7 @@
     position: absolute;
     display: none;
     z-index: 999;
+    border: solid 1px #d4d4d4;
   }
 
   .msg-menu {
@@ -1010,7 +1020,7 @@
     padding-bottom: 10px;
   }
 
-  .chat-area li {
+  .chat-area .chat-inner li {
     padding: 8px 50px 8px 30px;
   }
 

@@ -114,7 +114,7 @@
             </div>
             <div>
               <span class="detail-title">聊天号</span>
-              <span class="detail-value">{{friend.userId}}</span>
+              <span class="detail-value">{{friend.username}}</span>
             </div>
           </div>
         </div>
@@ -232,7 +232,7 @@
           clickToClose: false,
         })
       },
-      menu (index, e) {
+      convMenu (index, e) {
         this.delIdx = index
         this.menuStyle = {
           left: e.clientX + 'px',

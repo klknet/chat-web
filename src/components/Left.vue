@@ -1,9 +1,40 @@
 <template>
-  <div class="left">
-    <ul class="">
+  <div class="left" @click="clear">
+    <ul>
       <li>
-        <a>
+        <a class="top-1" @click.stop="userDetail($event)">
           <img id="profile" :src="fmtImg(user.profileUrl)">
+          <div class="detail-div" v-show="detailShow" @click.stop="" :style="detailStyle">
+            <div class="detail-row">
+              <div class="detail-left">
+                <div>
+                  <div>
+                    <span class="nickname">{{user.nickname}}</span>
+                    <img class="sex" :src="user.gender==0 ? '/web/static/img/female.png' : '/web/static/img/male.png'"/>
+                  </div>
+                  <div>
+                    <span class="chat-num">聊天号: {{user.username}}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="detail-right" @click="check">
+                <img class="big" :src="fmtImg(user.profileUrl)">
+              </div>
+            </div>
+            <div class="detail-row divisor"></div>
+            <div class="detail-row">
+              <div class="detail-left">
+                <span class="location">地&nbsp&nbsp&nbsp区</span>
+                <span class="city">{{user.country}} {{user.city}}</span>
+              </div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-right">
+                <a></a>
+                <a></a>
+              </div>
+            </div>
+          </div>
         </a>
       </li>
 
@@ -23,12 +54,13 @@
         </a>
       </li>
     </ul>
+
   </div>
 </template>
 
 <script>
   import vm from '@/event'
-  import config from '@/config'
+  import util from '@/util'
 
   let map = [
     ['p1', 'p1-1'], ['p2', 'p2-1'], ['p3', 'p3-1']
@@ -47,6 +79,10 @@
         chatCount: 0,
         rosterCount: 0,
         collectorCount: 0,
+        detailShow: false,
+        detail: {},
+        detailStyle: {},
+        enlarge: false,
       }
     },
     created() {
@@ -62,8 +98,10 @@
         this.navIndex = data
       })
       vm.$on('left-unread-num', (type, delta) => {
-        // console.log(type, delta)
         this.chatCount += delta
+      })
+      vm.$on('all-clear', () => {
+        this.clear()
       })
 
     },
@@ -98,10 +136,24 @@
         }
       },
       fmtImg(id) {
-        if(id.startsWith("http"))
-          return id
-        return 'http://'+config.host+config.context+"/file/img?id="+id
+        return util.fmtImg(id)
       },
+      userDetail(e) {
+        this.detailShow = true
+        this.detailStyle = {
+          left: e.offsetX + 'px',
+          top: e.offsetY + 'px',
+        }
+      },
+      clear() {
+        this.detailShow = false
+        this.detailStyle = {}
+      },
+      check() {
+        this.detailShow = false
+        this.$emit('enlargeProfileEvent')
+      },
+
     }
   }
 </script>
@@ -147,6 +199,10 @@
     width: 29px;
   }
 
+  .big {
+    width: 39px;
+  }
+
   #profile {
     width: 35px;
   }
@@ -168,4 +224,54 @@
     font-weight: 500;
     padding: 3px 6px;
   }
+
+  .detail-div {
+    position: absolute;
+    width: 290px;
+    height: 220px;
+    background-color: #fff;
+    z-index: 999;
+    cursor: default;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 25px 22px;
+  }
+
+  .top-1 {
+    position: relative;
+  }
+
+  .detail-left {
+  }
+
+  .nickname {
+    color: #000;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  img.sex {
+    width: 25px !important;
+    padding-bottom: 4px;
+  }
+  img.big {
+    width: 49px !important;
+  }
+  .chat-num {
+    color: #999999;
+  }
+  .divisor{
+    border-top:solid 1px #F4F4F4;
+  }
+  .location {
+    color: #999;
+  }
+  .city {
+    color: #000;
+    padding-left: 10px;
+  }
+
 </style>

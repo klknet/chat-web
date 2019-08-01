@@ -80,6 +80,9 @@ export default {
    */
   updateNotename: function (userId, destId, notename) {
     return axios.put('/user/setNotename?userId='+userId+'&destId='+destId+"&notename="+notename)
+  },
+  uploadAvatar: function (fd) {
+    return axios.post('/user/updateAvatar', fd, {headers:{'Content-Type':'multipart/form-data'}})
   }
 
 }

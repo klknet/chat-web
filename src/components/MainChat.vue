@@ -1,7 +1,7 @@
 <template>
   <div class="box">
     <div class="inner" @click="clear" v-show="display" :class="{'full-screen': max}">
-      <Left :user="user"/>
+      <Left :user="user" v-on:enlargeProfileEvent="enlargeProfile"/>
       <keep-alive>
         <router-view ></router-view>
       </keep-alive>
@@ -15,7 +15,22 @@
     </div>
     <div class="thumbnail" v-show="!display" @click="show">
     </div>
+
     <modals-container/>
+    <modal name="profile" width="330" height="360">
+      <div class="enlarge">
+        <div class="close" @click="$modal.hide('profile')"><span>x</span></div>
+        <div class="middle-profile">
+          <img :src="fmtImg(user.profileUrl)"/>
+          <div class="upload">
+            <form id='uploadForm'  enctype="multipart/form-data">
+              <label for="avatar" class="upload-avatar">修改头像</label>
+              <input id="avatar" type="file" style="display: none" name="file" @change="updateProfile" accept="image/*"/>
+            </form>
+          </div>
+        </div>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -53,7 +68,7 @@
     },
     methods: {
       clear() {
-
+        vm.$emit('all-clear')
       },
       closeWin: function () {
         userRequest.delTicket(this.user.userId)
@@ -69,6 +84,24 @@
       },
       show: function () {
         this.display = true
+      },
+      enlargeProfile() {
+        this.$modal.show('profile', {
+        })
+      },
+      fmtImg(id) {
+        return util.fmtImg(id)
+      },
+      updateProfile(e) {
+        console.log('hh ', e)
+        let fd = new FormData()
+        fd.append('file', e.target.files[0])
+        fd.append('userId', this.user.userId)
+        userRequest.uploadAvatar(fd).then(data=> {
+          console.log(data)
+          this.user.profileUrl = data
+          storage.setUser(this.user)
+        })
       }
 
     }
@@ -86,6 +119,11 @@
     width: 870px;
     height: 605px;
     border: solid 1px #d6d6d6;
+    position: relative;
+  }
+
+  input {
+    outline: none;
   }
 
   .full-screen {
@@ -134,8 +172,31 @@
     width:65px;
     height: 65px;
   }
+  .enlarge {
+    background-color: #F5F5F5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    width: 100%;
+    height: 100%;
+  }
+  .middle-profile img{
+    width: 155px;
+  }
+  .close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
+  .upload {
+    width: 155px;
+    margin-top: 15px;
+  }
+  .upload-avatar{
+    cursor: pointer;
 
-
+  }
 
 
 </style>

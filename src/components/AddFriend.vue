@@ -11,7 +11,7 @@
       <div class="friend-list">
         <ul>
           <li v-for="(user, index) in users">
-            <img v-bind:src="user.profileUrl"/>
+            <img v-bind:src="fmtImg(user.profileUrl)"/>
             <span class="nickname">{{user.nickname}}</span>
             <input type="radio" v-bind:id="user.userId" v-bind:value="user.userId"
                    v-model="pickedUser" class="checkbox"/>
@@ -82,6 +82,9 @@
           userRequest.requestFriend(this.user.userId, this.pickedUser)
           this.$modal.hide(this.$parent.name)
         }
+      },
+      fmtImg(id) {
+        return util.fmtImg(id)
       },
     }
   }
