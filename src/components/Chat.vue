@@ -102,10 +102,10 @@
                   <span>{{fmtRevocation(message)}}</span>
                 </div>
                 <div v-else>
-                  <template v-if="message.chatType === 0">
+                  <template v-if="message.chatType == null || message.chatType === 0">
                     <a class="other-person"><img v-bind:src="fmtImg(chatPerson.profileUrl)"></a>
                   </template>
-                  <template v-else>
+                  <template v-else-if="message.chatType == 1">
                     <a class="other-person"><img v-bind:src="fmtImg(groupChatMember(message, info.conv).profileUrl)"></a>
                     <span class="nickname ">{{groupChatMember(message, info.conv).nickname}}</span>
                   </template>
