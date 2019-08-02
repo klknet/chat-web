@@ -42,19 +42,6 @@
             </li>
           </ul>
         </div>
-        <div class="conv-menu" :style="menuStyle">
-          <ul>
-            <li @click="top">
-              <a>{{isTop?'取消置顶':'置顶'}}</a>
-            </li>
-            <li @click="dnd">
-              <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
-            </li>
-            <li class="divider" @click="remove">
-              <a>删除聊天</a>
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
 
@@ -94,7 +81,6 @@
                   <div v-else-if="message.type==0">
                     <span class="myself" @contextmenu.prevent="msgMenu(message, $event)">{{message.content}}</span>
                   </div>
-
                 </div>
               </div>
               <div class="img-msg" v-else>
@@ -125,17 +111,7 @@
             </li>
           </ul>
         </div>
-        <div class="msg-menu" :style="msgMenuStyle">
-          <ul>
-            <li @click="copy"><a>复制</a></li>
-            <li class="divider"></li>
-            <template v-if="showRevocation">
-              <li @click="revocation"><a>撤回</a></li>
-            </template>
-            <li @click="ref">引用</li>
-            <li @click="delMsg">删除</li>
-          </ul>
-        </div>
+
       </div>
 
       <div class="send-area">
@@ -166,9 +142,31 @@
       </div>
     </div>
 
+    <div class="conv-menu" :style="menuStyle">
+      <ul>
+        <li @click="top">
+          <a>{{isTop?'取消置顶':'置顶'}}</a>
+        </li>
+        <li @click="dnd">
+          <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
+        </li>
+        <li class="divider" @click="remove">
+          <a>删除聊天</a>
+        </li>
+      </ul>
+    </div>
 
-
-
+    <div class="msg-menu" :style="msgMenuStyle">
+      <ul>
+        <li @click="copy"><a>复制</a></li>
+        <li class="divider"></li>
+        <template v-if="showRevocation">
+          <li @click="revocation"><a>撤回</a></li>
+        </template>
+        <li @click="ref">引用</li>
+        <li @click="delMsg">删除</li>
+      </ul>
+    </div>
   </div>
 
 </template>
@@ -179,12 +177,11 @@
   import msgRequest from '../message'
   import util from '../util'
   import vm from '@/event'
-  import lodash from 'lodash'
-  import userRequest from '../user'
   import messageRequest from '@/message'
   import ws from '../websocket'
   import CreateGroupChat from './CreateGroupChat'
   import config from '@/config'
+  import uuid from 'uuid'
 
   export default {
     name: 'Chat',
@@ -400,8 +397,8 @@
         this.isTop = this.conversations[index].top
         this.isDnd = this.conversations[index].dnd
         this.menuStyle = {
-          left: e.offsetX + 'px',
-          top: e.offsetY + 'px',
+          left: e.clientX + 'px',
+          top: e.clientY + 'px',
           width: this.isDnd ? '130px' : '120px',
           display: 'block'
         }
@@ -412,8 +409,8 @@
         this.showRevocation = diff <= 120000
         this.checkedMessage = msg
         this.msgMenuStyle = {
-          left: e.pageX + 'px',
-          top: e.pageY + 'px',
+          left: e.clientX + 'px',
+          top: e.clientY + 'px',
           display: 'block'
         }
         console.log(e)
@@ -441,6 +438,7 @@
             type: 0,
             chatType: conv.type,
             createTime: new Date().getTime(),
+            messageId: uuid.v1()
           }
           let data = {
             type: 2,
@@ -770,6 +768,7 @@
 
   .chat {
     height: 100%;
+    width: 100%;
   }
 
   .median {
@@ -781,7 +780,7 @@
   }
 
   .right {
-    width: calc(100% - 250px - 60px);
+    width: calc(100% - 250px);
     min-width: 300px;
     float: left;
     height: 100%;

@@ -118,7 +118,7 @@
     width: 870px;
     height: 605px;
     border: solid 1px #d6d6d6;
-    position: relative;
+    display: flex;
   }
 
   input {
