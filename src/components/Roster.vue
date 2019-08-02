@@ -114,7 +114,7 @@
             </div>
             <div>
               <span class="detail-title">聊天号</span>
-              <span class="detail-value">{{friend.username}}</span>
+              <span class="detail-value">{{friend.userId}}</span>
             </div>
           </div>
         </div>
@@ -290,6 +290,7 @@
 
   .roster {
     height: 100%;
+    width: 100%;
   }
 
   .conv-menu {
@@ -343,7 +344,7 @@
   }
 
   .right {
-    width: calc(100% - 250px - 60px);
+    width: calc(100% - 250px);
     min-width: 300px;
     float: left;
     height: 100%;

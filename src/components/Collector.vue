@@ -16,6 +16,7 @@
 <style scoped>
   .collector{
     height: 100%;
+    width: 100%;
   }
 
   .median {
@@ -26,7 +27,7 @@
   }
 
   .right {
-    width: calc(100% - 250px - 60px);
+    width: calc(100% - 250px);
     min-width: 300px;
     float: left;
     height: 100%;
