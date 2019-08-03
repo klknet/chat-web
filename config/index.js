@@ -94,7 +94,7 @@ module.exports = {
       ws: 'ws://39.106.133.40:8080/ims/ws/chat'
     }
     var company = {
-      host: '192.168.1.100',
+      host: '192.168.183.100',
       protocol: 'http',
       timeout: 6000,
       context: '/ims',
