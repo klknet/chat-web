@@ -288,6 +288,13 @@
     width: 0;
   }
 
+  span{
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
   .roster {
     height: 100%;
     width: 100%;

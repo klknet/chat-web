@@ -1,30 +1,38 @@
-var tags = {'soda': 5, 'php': 2, 'java': 3, 'c': 9}
+var fs = require('fs')
+var websocket = require('nodejs-websocket')
 
-for (let i in tags) {
-  // console.log(i, tags[i])
-}
+var connection = websocket.connect('ws://localhost:8080/ims/ws/chat')
 
-var p1 = function () {
-  return new Promise((res, rej) => {
-    setTimeout(function () {
-      res('hello world')
-      // rej("error happened")
-    }, 100)
+connection.on('connect', function () {
+  console.log('connect to the server')
+  fs.readFile('d:/GeoGebra-Windows-Installer-6-0-541-0.exe', function (err, data) {
+    if (err) {
+      return console.error(err)
+    }
+    console.log(data.length)
+    var size = 1024 * 8
+    if (data.length > size) {
+      var seg
+      page = data.length % size == 0 ? data.length / size : parseInt(data.length / size) + 1
+      i = 0
+      while (i < page) {
+        seg = data.slice(i * size, (i + 1) * size)
+        i++
+        connection.sendBinary(seg, function () {
+          if (i == page) {
+            connection.close()
+          }
+        })
+      }
+    } else {
+      connection.sendBinary(data)
+    }
   })
-}
-
-p1().then(res => {
-  console.log(res)
-}).catch(rej => {
-  console.error(rej)
 })
 
 
-if(/^[0-9A-Za-z~!@#$%^&*()]{6,16}$/.test('12abcd*^()%!~')) {
-  console.log('success')
-}else {
-  console.log('failed')
-}
 
-console.log('windows7 windows2000 windows95'.match(/windows(?=95|2000)/g))
+
+
+
 

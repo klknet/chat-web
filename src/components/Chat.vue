@@ -32,6 +32,9 @@
                       <template v-else-if="conversation.messageType == 1">
                           [图片]
                       </template>
+                      <template v-else-if="conversation.messageType == 2">
+                        [文件]
+                      </template>
                       <template v-else-if="conversation.messageType == 5">
                           撤回了一条消息
                       </template>
@@ -68,21 +71,35 @@
                    class="oldest-time-area">
                 <span class="oldest-time">{{formatDate(message.createTime)}}</span>
               </div>
+
               <div class="img-msg" v-if="message.userId==user.userId">
                 <div v-if="message.type==5" class="revocation">
                   <span>你撤回了一条消息</span>
                 </div>
                 <div v-else>
                   <a class="myself"><img v-bind:src="fmtImg(user.profileUrl)"></a>
-                  <div v-if="message.type==3">
+                  <div v-if="message.type==1">
                     <a class="myself-content" @contextmenu.prevent="msgMenu(message, $event)"><img
                       :src="imgPrefix+'/'+message.content"></a>
                   </div>
                   <div v-else-if="message.type==0">
                     <span class="myself" @contextmenu.prevent="msgMenu(message, $event)">{{message.content}}</span>
                   </div>
+                  <div v-else-if="message.type==2">
+                    <span class="myself msg-file" @click="download(message.content)">
+                      <span class="msg-file-left">
+                        <span>{{message.fileDetail.filename}}</span>
+                        <br/>
+                        <span style="font-size: 0.9em; color: #B2B2C9;">{{(message.fileDetail.size/1024).toFixed(1)+'K'}}</span>
+                      </span>
+                      <span class="msg-file-right">
+                        <img src="../../static/img/msg_file.png">
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </div>
+
               <div class="img-msg" v-else>
                 <div v-if="message.type==5" class="revocation">
                   <span>{{fmtRevocation(message)}}</span>
@@ -92,7 +109,8 @@
                     <a class="other-person"><img v-bind:src="fmtImg(chatPerson.profileUrl)"></a>
                   </template>
                   <template v-else-if="message.chatType == 1">
-                    <a class="other-person"><img v-bind:src="fmtImg(groupChatMember(message, info.conv).profileUrl)"></a>
+                    <a class="other-person"><img
+                      v-bind:src="fmtImg(groupChatMember(message, info.conv).profileUrl)"></a>
                     <span class="nickname ">{{groupChatMember(message, info.conv).nickname}}</span>
                   </template>
                   <template v-if="message.type == 0">
@@ -104,6 +122,18 @@
                        @contextmenu.prevent="msgMenu(message, $event)"
                        @click="imageEnlarge($event, message.destId)"><img
                       :src="message.content"></a>
+                  </template>
+                  <template v-else-if="message.type == 2">
+                    <span class="other-person msg-file" @click="download(message.content)">
+                      <span class="msg-file-left">
+                        <span>{{message.fileDetail.filename}}</span>
+                        <br/>
+                        <span style="font-size: 0.9em; color: #B2B2C9;">{{(message.fileDetail.size/1024).toFixed(1)+'K'}}</span>
+                      </span>
+                      <span class="msg-file-right">
+                        <img src="../../static/img/msg_file.png">
+                      </span>
+                    </span>
                   </template>
                 </div>
               </div>
@@ -117,6 +147,7 @@
       <div class="send-area">
         <div class="content-area">
           <div class="menu-area">
+            <input type="file" @change="selFile" id="prop_file" style="display:none">
                         <span class="menu-item">
                             <img @click="propFile" src="/web/static/img/file.png">
                         </span>
@@ -129,7 +160,7 @@
             <div class="img-area">
               <ul>
                 <li v-for="filepath in filepaths">
-                  <img :src="filepath">
+                  {{filepath.name}}
                 </li>
               </ul>
             </div>
@@ -182,6 +213,7 @@
   import CreateGroupChat from './CreateGroupChat'
   import config from '@/config'
   import uuid from 'uuid'
+  import fs from 'fs'
 
   export default {
     name: 'Chat',
@@ -283,7 +315,7 @@
         this.revocationNotify(data)
       })
 
-      vm.$on('chat-delete-message', data=> {
+      vm.$on('chat-delete-message', data => {
         this.deleteMsgNotify(data)
       })
 
@@ -423,12 +455,55 @@
         this.showRevocation = true
       },
       clear () {
-        console.log('clear chat')
         this.hideMenu()
       },
       //发送消息
-      sendMsg: function () {
-        if (this.message2send && this.cur != -1) {
+      sendMsg () {
+        if (this.filepaths.length > 0) {
+          for (let file of this.filepaths) {
+            var size = 1024 * 100
+            let id = uuid.v1()
+            let page = file.size % size == 0 ? file.size / size : parseInt(file.size / size) + 1
+            var reader = new FileReader();
+            let j=0
+            for (let i=0; i<page; i++) {
+              var blob = file.slice(i*size, (i + 1)*size, file.type)
+              // If we use onloadend, we need to check the readyState.
+              let fd = new FormData()
+              fd.set('file', new File([blob], file.name, {type: file.type}))
+              setTimeout(()=> {
+                messageRequest.uploadFile(id, file.name, fd, i * size).then(res => {
+                  j++
+                  if (j == page) {
+                    let ext = file.name.substring(file.name.lastIndexOf('\\.')+1)
+                    let imageType = ['png', 'jpg', 'jpeg', 'bmp', 'gif']
+                    let type = 2
+                    for (let t of imageType) {
+                      if (ext == t) {
+                        type = 1
+                        break
+                      }
+                    }
+                    let conv = this.conversations[this.cur]
+                    let message = {
+                      conversationId: conv.conversationId,
+                      userId: this.user.userId,
+                      destId: conv.destId,
+                      content: this.message2send,
+                      type: type,
+                      chatType: conv.type,
+                      createTime: new Date().getTime(),
+                      messageId: uuid.v1()
+                    }
+                    messageRequest.uploadDone(id, file.name, message)
+                  }
+                })
+              }, 100*Math.random()+1)
+            }
+          }
+          this.filepaths.splice(0, this.filepaths.length)
+        }
+        else if (this.message2send && this.cur != -1) {
           let conv = this.conversations[this.cur]
           let message = {
             conversationId: conv.conversationId,
@@ -470,8 +545,9 @@
                 break
               }
             }
-            if (idx >= 0)
+            if (idx >= 0) {
               messages.splice(idx, 1)
+            }
             break
           }
         }
@@ -508,21 +584,22 @@
       fmtRevocation (message) {
         if (message.chatType == 0) {
           let idx = this.friendIdx(message.userId)
-          if (idx != -1)
-            return this.user.friends[idx].remark+'撤回了一条消息'
+          if (idx != -1) {
+            return this.user.friends[idx].remark + '撤回了一条消息'
+          }
 
-        }else {
+        } else {
           let idx = this.indexOf(message.conversationId)
           if (idx != -1) {
             let conv = this.conversations[idx]
             let member = this.groupChatMember(message, conv)
-            return member.nickname+'撤回了一条消息'
+            return member.nickname + '撤回了一条消息'
           }
         }
         return '撤回了一条消息'
       },
-      friendIdx(userId) {
-        for (let i=0; i<this.user.friends.length; i++) {
+      friendIdx (userId) {
+        for (let i = 0; i < this.user.friends.length; i++) {
           let friend = this.user.friends[i]
           if (friend.userId == userId) {
             return i
@@ -530,23 +607,24 @@
         }
         return -1
       },
-      copy(e) {
+      copy (e) {
 
       },
       //引用
-      ref() {
-        if(this.checkedMessage.messageId) {
-          if (this.checkedMessage.userId == this.user.userId)
-            this.message2send = '「我： '+this.checkedMessage.content+"」\n- - - - - - - - - - - - - - -\n"
-          else {
+      ref () {
+        if (this.checkedMessage.messageId) {
+          if (this.checkedMessage.userId == this.user.userId) {
+            this.message2send = '「我： ' + this.checkedMessage.content + '」\n- - - - - - - - - - - - - - -\n'
+          } else {
             let idx = this.friendIdx(this.checkedMessage.userId)
-            this.message2send = '「'+this.user.friends[idx].username+'： '+this.checkedMessage.content+"」\n- - - - - - - - - - - - - - -\n"
+            this.message2send = '「' + this.user.friends[idx].username + '： ' + this.checkedMessage.content + '」\n- - - - - - - - - - - - - - -\n'
           }
         }
       },
-      delMsg() {
-        if(this.checkedMessage.messageId)
+      delMsg () {
+        if (this.checkedMessage.messageId) {
           msgRequest.delMsg(this.checkedMessage.messageId, this.user.userId)
+        }
       },
       //更新会话信息
       updateConversation (idx, message, stay) {
@@ -702,29 +780,40 @@
       paste: function (e) {
         var clipboardData = e.clipboardData
         if (!(clipboardData && clipboardData.items)) {//是否有粘贴内容
-          return;
+          return
         }
         for (var i = 0, len = clipboardData.items.length; i < len; i++) {
-          var item = clipboardData.items[i];
-          if (item.kind === "string" && item.type == "text/plain") {
+          var item = clipboardData.items[i]
+          if (item.kind === 'string' && item.type == 'text/plain') {
             item.getAsString((str) => {
               // str 是获取到的字符串,创建文本框
               //处理粘贴的文字内容
               this.message2send += str
             })
-          } else if (item.kind === "file") {//file 一般是各种截图base64数据
-            var pasteFile = item.getAsFile();
+          } else if (item.kind === 'file') {//file 一般是各种截图base64数据
+            var pasteFile = item.getAsFile()
             // pasteFile就是获取到的文件
-            var reader = new FileReader();
+            var reader = new FileReader()
             reader.onload = function (event) {
-              var base64Img = event.target.result;
-            }; // data url
-            reader.readAsDataURL(pasteFile);
+              var base64Img = event.target.result
+            } // data url
+            reader.readAsDataURL(pasteFile)
           }
         }
       },
       propFile: function () {
-
+        document.getElementById('prop_file').click()
+      },
+      selFile (e) {
+        let file = e.target.files[0]
+        console.log(file)
+        for (let file of e.target.files) {
+          this.filepaths.push(file)
+          // this.message2send += file.name
+        }
+      },
+      download(id) {
+        messageRequest.download(id)
       },
       clearMsg: function () {
 
@@ -746,6 +835,14 @@
     background: rgba(255, 0, 0, 0.4);
     display: none;
   }
+
+  span{
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
 
   li, ul, div {
     margin: 0;
@@ -1121,7 +1218,7 @@
   }
 
   span.other-person:hover {
-    background-color: #F6F6F6;
+    background-color: #F6F6F6 !important;
   }
 
   span.other-person:hover:before {
@@ -1130,6 +1227,35 @@
 
   span.myself:hover {
     background-color: #98E165;
+  }
+
+  .msg-file{
+    cursor: pointer;
+    width: 230px;
+    background-color: #fff !important;
+  }
+
+  span.msg-file::after {
+      border-left-color: #fff !important;
+  }
+
+  span.msg-file:hover {
+    background-color: #F6F6F6 !important;
+  }
+
+  .msg-file-left {
+    float: left;
+    width: 55.8%;
+  }
+
+  .msg-file-right {
+    float: right;
+  }
+
+  .msg-file-right img {
+    width: 48px;
+    margin-top: 20%;
+    margin-right: 10%;
   }
 
   .send-area {

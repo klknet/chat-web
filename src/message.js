@@ -1,4 +1,5 @@
 import axios from './request'
+import config from '@/config'
 
 export default {
   /*
@@ -25,5 +26,26 @@ export default {
   delMsg: function (msgId, userId) {
     let url = '/message/delMsg?msgId='+msgId+'&userId='+userId
     axios.delete(url)
+  },
+  /*
+  上传文件
+   */
+  uploadFile: function (id, fileName, fd, range) {
+    let url = '/file/upload?id='+id+'&fileName='+fileName
+    return axios.post(url, fd, {headers:{'Content-Type':'multipart/form-data', 'Range':'bytes='+range+'-'}})
+  },
+  /*
+  done
+   */
+  uploadDone(id, fileName, messageDO) {
+    let url = '/file/uploadDone?id='+id+'&fileName='+fileName
+    return axios.post(url, messageDO)
+  },
+  /*
+  下载
+   */
+  download(id) {
+    let url = '/file/download?id='+id
+    window.open('http://'+config.host+config.context+url)
   }
 }
