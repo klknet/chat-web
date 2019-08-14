@@ -80,12 +80,12 @@
                   <a class="myself"><img v-bind:src="fmtImg(user.profileUrl)"></a>
                   <div v-if="message.type==1">
                     <a class="myself-content" @contextmenu.prevent="msgMenu(message, $event)"><img
-                      :src="imgPrefix+'/'+message.content"></a>
+                      :src="fmtImg(message.content)"></a>
                   </div>
                   <div v-else-if="message.type==0">
                     <span class="myself" @contextmenu.prevent="msgMenu(message, $event)">{{message.content}}</span>
                   </div>
-                  <div v-else-if="message.type==2">
+                  <div v-else-if="message.type==2" @contextmenu.prevent="msgMenu(message, $event)">
                     <span class="myself msg-file" @click="download(message.content)">
                       <span class="msg-file-left">
                         <span>{{message.fileDetail.filename}}</span>
@@ -119,12 +119,12 @@
                   </template>
                   <template v-if="message.type == 1">
                     <a class="other-person-content"
-                       @contextmenu.prevent="msgMenu(message, $event)"
-                       @click="imageEnlarge($event, message.destId)"><img
-                      :src="message.content"></a>
+                       @contextmenu.prevent="msgMenu(message, $event)"><img
+                      :src="fmtImg(message.content)"></a>
                   </template>
                   <template v-else-if="message.type == 2">
-                    <span class="other-person msg-file" @click="download(message.content)">
+                    <span class="other-person msg-file" @click="download(message)"
+                          @contextmenu.prevent="msgMenu(message, $event)">
                       <span class="msg-file-left">
                         <span>{{message.fileDetail.filename}}</span>
                         <br/>
@@ -191,6 +191,7 @@
       <ul>
         <li @click="copy"><a>复制</a></li>
         <li class="divider"></li>
+        <li @click="collect"><a>收藏</a></li>
         <template v-if="showRevocation">
           <li @click="revocation"><a>撤回</a></li>
         </template>
@@ -458,50 +459,57 @@
         this.hideMenu()
       },
       //发送消息
-      sendMsg () {
+      async sendMsg () {
         if (this.filepaths.length > 0) {
-          for (let file of this.filepaths) {
-            var size = 1024 * 100
+          let filepaths = this.filepaths
+          this.filepaths = []
+          for (let file of filepaths) {
+            var size = 1024 * 256
             let id = uuid.v1()
             let page = file.size % size == 0 ? file.size / size : parseInt(file.size / size) + 1
             var reader = new FileReader();
             let j=0
+            let that = this
             for (let i=0; i<page; i++) {
               var blob = file.slice(i*size, (i + 1)*size, file.type)
               // If we use onloadend, we need to check the readyState.
               let fd = new FormData()
               fd.set('file', new File([blob], file.name, {type: file.type}))
-              setTimeout(()=> {
-                messageRequest.uploadFile(id, file.name, fd, i * size).then(res => {
-                  j++
-                  if (j == page) {
-                    let ext = file.name.substring(file.name.lastIndexOf('\\.')+1)
-                    let imageType = ['png', 'jpg', 'jpeg', 'bmp', 'gif']
-                    let type = 2
-                    for (let t of imageType) {
-                      if (ext == t) {
-                        type = 1
-                        break
-                      }
+              //传递完成后通知服务器
+              function uploadDone() {
+                j++
+                if (j == page) {
+                  let ext = file.name.substring(file.name.lastIndexOf('.')+1)
+                  let imageType = ['png', 'jpg', 'jpeg', 'bmp', 'gif']
+                  let type = 2
+                  for (let t of imageType) {
+                    if (ext == t) {
+                      type = 1
+                      break
                     }
-                    let conv = this.conversations[this.cur]
-                    let message = {
-                      conversationId: conv.conversationId,
-                      userId: this.user.userId,
-                      destId: conv.destId,
-                      content: this.message2send,
-                      type: type,
-                      chatType: conv.type,
-                      createTime: new Date().getTime(),
-                      messageId: uuid.v1()
-                    }
-                    messageRequest.uploadDone(id, file.name, message)
                   }
-                })
-              }, 100*Math.random()+1)
+                  let conv = that.conversations[that.cur]
+                  let message = {
+                    conversationId: conv.conversationId,
+                    userId: that.user.userId,
+                    destId: conv.destId,
+                    content: that.message2send,
+                    type: type,
+                    chatType: conv.type,
+                    createTime: new Date().getTime(),
+                    messageId: uuid.v1()
+                  }
+                  messageRequest.uploadDone(id, file.name, message)
+                }
+              }
+              function uploadPart () {
+                return messageRequest.uploadFile(id, fd, i * size)
+              }
+              //断点上传
+              await uploadPart().then(() => uploadDone()).catch(err => setTimeout(uploadPart, 10))
             }
           }
-          this.filepaths.splice(0, this.filepaths.length)
+          filepaths.splice(0, filepaths.length)
         }
         else if (this.message2send && this.cur != -1) {
           let conv = this.conversations[this.cur]
@@ -619,6 +627,12 @@
             let idx = this.friendIdx(this.checkedMessage.userId)
             this.message2send = '「' + this.user.friends[idx].username + '： ' + this.checkedMessage.content + '」\n- - - - - - - - - - - - - - -\n'
           }
+        }
+      },
+      //收藏
+      collect() {
+        if (this.checkedMessage.messageId) {
+          messageRequest.collect(this.user.userId, this.checkedMessage.messageId)
         }
       },
       delMsg () {
@@ -812,8 +826,8 @@
           // this.message2send += file.name
         }
       },
-      download(id) {
-        messageRequest.download(id)
+      download(message) {
+        messageRequest.download(message.content)
       },
       clearMsg: function () {
 
@@ -1098,6 +1112,10 @@
     width: 35px;
   }
 
+  .myself-content img, .other-person-content img{
+    width: 85px;
+  }
+
   .chat-area {
     height: calc(100% - 146px - 60px);
     width: calc(100% + 20px);
@@ -1190,7 +1208,7 @@
   }
 
   a.other-person-content:before {
-    border-right-color: #000000;
+    border-right-color: #fff;
   }
 
   .chat-area div.img-msg {
@@ -1203,7 +1221,7 @@
   }
 
   a.myself-content:after {
-    border-left-color: #000000;
+    border-left-color: #fff;
   }
 
   span.myself, span.other-person {

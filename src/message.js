@@ -30,8 +30,8 @@ export default {
   /*
   上传文件
    */
-  uploadFile: function (id, fileName, fd, range) {
-    let url = '/file/upload?id='+id+'&fileName='+fileName
+  uploadFile: function (id, fd, range) {
+    let url = '/file/upload?id='+id
     return axios.post(url, fd, {headers:{'Content-Type':'multipart/form-data', 'Range':'bytes='+range+'-'}})
   },
   /*
@@ -47,5 +47,24 @@ export default {
   download(id) {
     let url = '/file/download?id='+id
     window.open('http://'+config.host+config.context+url)
+  },
+  /*
+  收藏
+   */
+  collect(userId, id) {
+    let url = '/collect/save'
+    let df = new FormData()
+    df.set('userId', userId)
+    df.set('msgId', id)
+    return axios.post(url, df,
+      {headers:{'Content-Type': 'application/x-www-form-urlencoded'}})
+  },
+  /*
+  收藏列表
+   */
+  collectList(userId) {
+    return axios.get("/collect/list")
   }
+
+
 }
