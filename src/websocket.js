@@ -29,7 +29,7 @@ export default {
             util.toIndex()
           }
           else if (resp.code == 80001) {
-            window.wsChat.close()
+            wsChat.close()
             let time = new Date()
             time.getHours()
             time.getMinutes()

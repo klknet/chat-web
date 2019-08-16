@@ -86,11 +86,11 @@
                     <span class="myself" @contextmenu.prevent="msgMenu(message, $event)">{{message.content}}</span>
                   </div>
                   <div v-else-if="message.type==2" @contextmenu.prevent="msgMenu(message, $event)">
-                    <span class="myself msg-file" @click="download(message.content)">
+                    <span class="myself msg-file" @click="download(message)">
                       <span class="msg-file-left">
                         <span>{{message.fileDetail.filename}}</span>
                         <br/>
-                        <span style="font-size: 0.9em; color: #B2B2C9;">{{(message.fileDetail.size/1024).toFixed(1)+'K'}}</span>
+                        <span style="font-size: 0.9em; color: #B2B2C9;">{{fmtByteSize(message.fileDetail.size)}}</span>
                       </span>
                       <span class="msg-file-right">
                         <img src="../../static/img/msg_file.png">
@@ -128,7 +128,7 @@
                       <span class="msg-file-left">
                         <span>{{message.fileDetail.filename}}</span>
                         <br/>
-                        <span style="font-size: 0.9em; color: #B2B2C9;">{{(message.fileDetail.size/1024).toFixed(1)+'K'}}</span>
+                        <span style="font-size: 0.9em; color: #B2B2C9;">{{fmtByteSize(message.fileDetail.size)}}</span>
                       </span>
                       <span class="msg-file-right">
                         <img src="../../static/img/msg_file.png">
@@ -828,6 +828,15 @@
       },
       download(message) {
         messageRequest.download(message.content)
+      },
+      fmtByteSize(size) {
+        if (size < 1<<20) {
+          return (size/1024).toFixed(1) + 'K'
+        }else if (size < (1<<30)) {
+          return (size/(1<<20)).toFixed(1) + 'M'
+        } else {
+          return (size/(1<<30)).toFixed(1) + 'G'
+        }
       },
       clearMsg: function () {
 
