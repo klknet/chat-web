@@ -211,7 +211,7 @@
           }
         }
       },
-      async transferFile() {
+      async transferFile(conv) {
         let filepaths = this.filepaths
         this.filepaths = []
         for (let file of filepaths) {
@@ -239,7 +239,7 @@
                     break
                   }
                 }
-                let conv = that.messageMap[that.conversationIndex(that.cur)].conv
+
                 let message = {
                   conversationId: conv.conversationId,
                   userId: that.user.userId,
@@ -273,7 +273,8 @@
       //发送消息
       sendMsg: function() {
         if (this.filepaths.length > 0) {
-          this.transferFile()
+          let conv = this.messageMap[this.conversationIndex(this.cur)].conv
+          this.transferFile(conv)
         }
         else if (this.message2send && this.cur != -1) {
           let conv = this.messageMap[this.conversationIndex(this.cur)].conv
