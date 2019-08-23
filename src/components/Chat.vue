@@ -53,15 +53,7 @@
 </script>
 
 <style scoped>
-  /*设置滚动条的样式*/
-  ::-webkit-scrollbar {
-    width: 0;
-  }
 
-  ::-webkit-scrollbar-thumb:window-inactive {
-    background: rgba(255, 0, 0, 0.4);
-    display: none;
-  }
   .chat {
     height: 100%;
     width: 100%;

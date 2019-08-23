@@ -250,11 +250,11 @@
                   createTime: new Date().getTime(),
                   messageId: uuid.v1()
                 }
-                messageRequest.uploadDone(id, file.name, message)
+                msgRequest.uploadDone(id, file.name, message)
               }
             }
             function uploadPart () {
-              return messageRequest.uploadFile(id, fd, i * size)
+              return msgRequest.uploadFile(id, fd, i * size)
             }
             //断点上传
             await uploadPart().then(() => uploadDone()).catch(err => setTimeout(uploadPart, 10))
@@ -546,6 +546,16 @@
 </script>
 
 <style scoped>
+  /*设置滚动条的样式*/
+  ::-webkit-scrollbar {
+    width: 0;
+  }
+
+  ::-webkit-scrollbar-thumb:window-inactive {
+    background: rgba(255, 0, 0, 0.4);
+    display: none;
+  }
+
   span{
     -webkit-user-select: none;
     -moz-user-select: none;
