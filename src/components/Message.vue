@@ -301,7 +301,7 @@
 
       revocation: function () {
         if (this.checkedMessage.messageId) {
-          messageRequest.revocation(this.user.userId, this.checkedMessage.messageId)
+          msgRequest.revocation(this.user.userId, this.checkedMessage.messageId)
         }
       },
       paste: function (e) {
@@ -340,7 +340,7 @@
         }
       },
       download(message) {
-        messageRequest.download(message.content)
+        msgRequest.download(message.content)
       },
       fmtByteSize(size) {
         if (size < 1<<20) {
@@ -472,7 +472,7 @@
       //收藏
       collect() {
         if (this.checkedMessage.messageId) {
-          messageRequest.collect(this.user.userId, this.checkedMessage.messageId)
+          msgRequest.collect(this.user.userId, this.checkedMessage.messageId)
         }
       },
       delMsg () {

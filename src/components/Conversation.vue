@@ -68,9 +68,11 @@
   import vm from '@/event'
   import messageRequest from '@/message'
   import util from '@/util'
+  import CreateGroupChat from '@/components/CreateGroupChat'
 
   export default {
     name: 'Conversation',
+    components: {CreateGroupChat},
     props: {
       user: Object
     },
