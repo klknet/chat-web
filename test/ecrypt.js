@@ -28,3 +28,13 @@ let word = "hello word"
 cipher = encrypt(word)
 console.log(cipher, cipher.length)
 console.log('decrypt',decrypt(cipher))
+
+function getParameter(id, ticket, s) {
+  let p = new RegExp("(^|&)"+id+"=(?<"+id+">[^&]*)(&|$)")
+  let group = s.match(p).groups
+  console.log(group)
+}
+let s = 'userId=aaaa&ticket=bbbb'
+getParameter("userId", "ticket", s)
+// getParameter("ticket", s)
+

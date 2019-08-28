@@ -7,10 +7,10 @@ let wsChat
 
 export default {
   connect: function() {
-    wsChat = new WebSocket(config.ws)
+    let user = storage.getUser()
+    wsChat = new WebSocket(config.ws+"?userId="+user.userId+"&ticket="+user.ticket)
     wsChat.onopen = () => {
       console.log('create websoket connection')
-      authentication()
       ping()
     }
     wsChat.onclose = (evt) => {
@@ -78,19 +78,6 @@ export default {
       }, 15000)
     }
 
-    function authentication() {
-      console.log('auth')
-      let user = storage.getUser()
-      let auth = {
-        userId: user.userId
-      }
-      let req = {
-        type: 1,
-        ticket: user.ticket,
-        data: JSON.stringify(auth)
-      }
-      wsChat.send(JSON.stringify(req))
-    }
   },
 
   send: function (data) {
