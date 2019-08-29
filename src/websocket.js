@@ -4,18 +4,31 @@ import storage from '@/storage'
 import config from '@/config'
 
 let wsChat
+let live = false
 
 export default {
-  connect: function() {
+  id: '',
+  connect: function () {
+    if (this.id)
+      clearInterval(this.id)
+    if (live) {
+      return
+    }
     let user = storage.getUser()
-    wsChat = new WebSocket(config.ws+"?userId="+user.userId+"&ticket="+user.ticket)
+    wsChat = new WebSocket(config.ws + '?userId=' + user.userId + '&ticket=' + user.ticket)
     wsChat.onopen = () => {
       console.log('create websoket connection')
+      live = true
       ping()
     }
-    wsChat.onclose = (evt) => {
-      console.log('connection closed', wsChat.id)
+    let reconnect = (evt) => {
+      if (this.id)
+        clearInterval(this.id)
+      live = false
+      console.log('connection closed')
+      this.id = setInterval(this.connect, 1000*16);
     }
+    wsChat.onclose = reconnect
     //处理消息
     wsChat.onmessage = (evt) => {
       let resp = JSON.parse(evt.data)
@@ -47,20 +60,20 @@ export default {
           else if (resp.code == 80004) {
             vm.$emit('chat-get-conversation')
           }
-          else if(resp.code == 80005) {
+          else if (resp.code == 80005) {
             vm.$emit('chat-get-conversation')
             vm.$emit('roster-fresh-friend')
           }
           break
         case 2:
-          if(resp.code == 70001) {
+          if (resp.code == 70001) {
             vm.$emit('chat-receive-message', resp.data)
-          }else if(resp.code == 70002) {
+          } else if (resp.code == 70002) {
             vm.$emit('chat-revocation-message', JSON.parse(resp.data))
-          }else if(resp.code == 70003) {
+          } else if (resp.code == 70003) {
             console.log('delete')
             vm.$emit('chat-delete-message', JSON.parse(resp.data))
-          }else if(resp.code == 70004) {
+          } else if (resp.code == 70004) {
             vm.$emit('chat-update-conversation', JSON.parse(resp.data))
           }
           break
@@ -87,6 +100,5 @@ export default {
   close: function () {
     wsChat.close()
   },
-
 
 }
