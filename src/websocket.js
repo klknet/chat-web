@@ -67,7 +67,10 @@ export default {
           break
         case 2:
           if (resp.code == 70001) {
-            vm.$emit('chat-receive-message', resp.data)
+            let message = JSON.parse(resp.data)
+            vm.$emit('chat-receive-message', message)
+            //send ack
+            wsChat.send(JSON.stringify({type: 1, data: message.messageId}))
           } else if (resp.code == 70002) {
             vm.$emit('chat-revocation-message', JSON.parse(resp.data))
           } else if (resp.code == 70003) {
@@ -75,6 +78,8 @@ export default {
             vm.$emit('chat-delete-message', JSON.parse(resp.data))
           } else if (resp.code == 70004) {
             vm.$emit('chat-update-conversation', JSON.parse(resp.data))
+          } else if (resp.code == 70005) {
+            vm.$emit('chat-ack', resp.data)
           }
           break
       }

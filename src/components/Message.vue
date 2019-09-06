@@ -164,6 +164,7 @@
         msgMenuStyle: {},
         cur: -1,
         message2send: '',
+        unAckMessages: [] // 没有ack的message
       }
     },
     mounted () {
@@ -178,21 +179,19 @@
       vm.$on('all-clear', () => {
         this.clear()
       })
-      vm.$on('chat-receive-message', data => {
-        let message = JSON.parse(data)
-        for (let i in this.messageMap) {
-          let info = this.messageMap[i]
-          if (info.conv.conversationId === message.conversationId) {
-            info.messages.push(message)
-            if (this.cur != -1) {
-              this.scroll2End()
-            }
-            break
-          }
-        }
+      vm.$on('chat-receive-message', message => {
+        this.pushMessage(message)
       })
       vm.$on('message-remove-conversation', data => {
         this.removeMapRef(data)
+      })
+      vm.$on('chat-ack', data=> {
+        for (let i=0; i<this.unAckMessages.length; i++) {
+          if (data == this.unAckMessages[i].messageId) {
+            this.unAckMessages.splice(i, 1)
+            break
+          }
+        }
       })
     },
     methods: {
@@ -208,6 +207,18 @@
             if (member.userId === message.userId) {
               return member
             }
+          }
+        }
+      },
+      pushMessage(message) {
+        for (let i in this.messageMap) {
+          let info = this.messageMap[i]
+          if (info.conv.conversationId === message.conversationId) {
+            info.messages.push(message)
+            if (this.cur != -1) {
+              this.scroll2End()
+            }
+            break
           }
         }
       },
@@ -295,6 +306,17 @@
           }
           let text = JSON.stringify(data)
           ws.send(text)
+          this.unAckMessages.push(message)
+          setTimeout(() => {
+            for (let i=0; i<this.unAckMessages.length; i++) {
+              if (message.messageId == this.unAckMessages[i].messageId) {
+                this.unAckMessages.splice(i, 1)
+                message.unack = true
+                this.pushMessage(message)
+                break
+              }
+            }
+          }, 30)
           this.message2send = ''
         }
       },
