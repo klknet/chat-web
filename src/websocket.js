@@ -39,6 +39,7 @@ export default {
         case 1:
           // console.log(resp)
           if (resp.code == 60001) {
+            wsChat.close()
             util.toIndex()
           }
           else if (resp.code == 80001) {

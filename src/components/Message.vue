@@ -185,6 +185,9 @@
       vm.$on('message-remove-conversation', data => {
         this.removeMapRef(data)
       })
+      vm.$on('chat-revocation-message', data => {
+        this.revocationNotify(data)
+      })
       vm.$on('chat-ack', data=> {
         for (let i=0; i<this.unAckMessages.length; i++) {
           if (data == this.unAckMessages[i].messageId) {
@@ -210,11 +213,13 @@
           }
         }
       },
+      //消息推送到列表
       pushMessage(message) {
         for (let i in this.messageMap) {
           let info = this.messageMap[i]
-          if (info.conv.conversationId === message.conversationId) {
+          if (info.conv.conversationId === message.conversationId && !info.msgIdSet.has(message.messageId)) {
             info.messages.push(message)
+            info.msgIdSet.add(message.messageId)
             if (this.cur != -1) {
               this.scroll2End()
             }
@@ -390,6 +395,7 @@
             }
             if (idx >= 0) {
               messages.splice(idx, 1)
+              info.msgIdSet.delete(msgId)
             }
             break
           }
@@ -419,10 +425,10 @@
             break
           }
         }
-        let idx = this.indexOf(convId)
-        if (idx != -1) {
-          this.conversations[idx].lastMsg = myself ? '你撤回了一条消息' : message.content
-        }
+        vm.$emit('conversation-update-lastmsg', {
+          conversationId: message.conversationId,
+          lastMsg: myself ? '你撤回了一条消息' : message.content
+        })
       },
       fmtRevocation (message) {
         if (message.chatType == 0) {
@@ -430,11 +436,10 @@
           if (idx != -1) {
             return this.user.friends[idx].remark + '撤回了一条消息'
           }
-
         } else {
-          let idx = this.indexOf(message.conversationId)
+          let idx = this.conversationIndex(message.conversationId)
           if (idx != -1) {
-            let conv = this.conversations[idx]
+            let conv = this.message2send[idx].conv
             let member = this.groupChatMember(message, conv)
             return member.nickname + '撤回了一条消息'
           }
@@ -447,6 +452,7 @@
         for (let conv of conversations) {
           let info = {}
           info.messages = []
+          info.msgIdSet = new Set()
           info.showMore = false
           info.requested = false
           info.conv = conv

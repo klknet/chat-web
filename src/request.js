@@ -18,4 +18,6 @@ instance.interceptors.request.use(config => {
   console.error(err)
   return Promise.reject(err)
 })
+
+
 export default instance;

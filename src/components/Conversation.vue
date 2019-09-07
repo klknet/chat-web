@@ -120,6 +120,12 @@
         this.conversations[idx] = data
         storage.setConversation(this.conversations)
       })
+      vm.$on('conversation-update-lastmsg', data => {
+        let idx = this.indexOf(data.conversationId)
+        if (idx != -1) {
+          this.conversations[idx].lastMsg = data.lastMsg
+        }
+      })
       //处理新消息
       vm.$on('chat-receive-message', message => {
         let idx = this.indexOf(message.conversationId)
@@ -142,11 +148,6 @@
           util.notify(message)
         }
       })
-
-      vm.$on('chat-revocation-message', data => {
-        this.revocationNotify(data)
-      })
-
       vm.$on('chat-delete-message', data => {
         this.deleteMsgNotify(data)
       })
