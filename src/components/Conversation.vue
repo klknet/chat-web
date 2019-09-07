@@ -121,8 +121,7 @@
         storage.setConversation(this.conversations)
       })
       //处理新消息
-      vm.$on('chat-receive-message', data => {
-        let message = JSON.parse(data)
+      vm.$on('chat-receive-message', message => {
         let idx = this.indexOf(message.conversationId)
         let selfmessage = (this.user.userId == message.userId)
         //不存在的会话，新创建一个会话

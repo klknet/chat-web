@@ -316,7 +316,7 @@
                 break
               }
             }
-          }, 30)
+          }, 10000)
           this.message2send = ''
         }
       },
