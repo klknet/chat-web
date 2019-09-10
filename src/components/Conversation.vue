@@ -104,6 +104,8 @@
       }
     },
     mounted () {
+      console.log('ee')
+      this.getConversation()
       //更新会话列表
       vm.$on('chat-get-conversation', data => {
         let conv = null

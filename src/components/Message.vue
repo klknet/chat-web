@@ -7,11 +7,12 @@
     <div class="chat-area"
          :class="{'chat-active': cur!= -1 && info.conv.conversationId === cur}"
          v-for="(info, i) in messageMap"
+         @scroll="scrollEvent(info)"
          v-show="cur!= -1 && info.conv.conversationId === cur">
       <!--<div style="height: 45px;"></div>-->
-      <div @scroll.passive="scrollEvent" class="chat-inner">
+      <div class="chat-inner">
         <ul>
-          <li v-for="(message,index) in info.messages">
+          <li v-for="(message,index) in info.messages" v-bind:id="message.messageId">
             <div v-if="index==0" class="more-info">
               <span @click="showMore" v-show="info.showMore">查看更多消息</span>
             </div>
@@ -143,6 +144,7 @@
   import msgRequest from '@/message'
   import util from '@/util'
   import * as uuid from 'uuid'
+  import * as lodash from 'lodash'
 
   export default {
     name: 'Message',
@@ -325,7 +327,30 @@
           this.message2send = ''
         }
       },
-
+      scrollEvent: lodash.debounce(function (info) {
+        let chatArea = document.getElementsByClassName('chat-active')[0]
+        if (chatArea.scrollTop < 10 && !info.showMore) {
+          info.showMore=true
+          setTimeout(()=> {
+            msgRequest.historyMessage(info.conv.conversationId, this.user.userId, info.conv.createTime, info.messages[0].createTime, false).then(res => {
+              info.showMore = false
+              if (res.data && res.data.length > 0) {
+                let lastMsg = info.messages[0]
+                res.data.forEach(v => {
+                  if (!info.msgIdSet.has(v.messageId)) {
+                    info.msgIdSet.add(v.messageId)
+                    info.messages.unshift(v)
+                  }
+                })
+                this.$nextTick(() => {
+                  console.log('back to last msg', lastMsg.content)
+                  document.getElementById(lastMsg.messageId).scrollIntoView()
+                })
+              }
+            })
+          }, 1000)
+        }
+      }, 200),
       revocation: function () {
         if (this.checkedMessage.messageId) {
           msgRequest.revocation(this.user.userId, this.checkedMessage.messageId)
@@ -528,9 +553,15 @@
         for (let info of this.messageMap) {
           if (info.conv.conversationId == conv.conversationId) {
             if (!info.requested) {
-              msgRequest.historyMessage(conv.conversationId, this.user.userId, conv.createTime, true).then(res => {
+              msgRequest.historyMessage(conv.conversationId, this.user.userId, conv.createTime, '', true).then(res => {
                 if (res.data) {
-                  info.messages = res.data
+                  // info.messages = res.data
+                  res.data.forEach(v => {
+                    if (!info.msgIdSet.has(v.messageId)) {
+                      info.msgIdSet.add(v.messageId)
+                      info.messages.unshift(v)
+                    }
+                  })
                   this.scroll2End()
                   info.requested = true
                 }
@@ -553,14 +584,13 @@
       },
       msgMenu (msg, e) {
         let diff = new Date().getTime() - new Date(msg.createTime).getTime()
-        this.showRevocation = diff <= 120000
+        this.showRevocation = diff <= 120000 && msg.userId == this.user.userId
         this.checkedMessage = msg
         this.msgMenuStyle = {
           left: e.clientX + 'px',
           top: e.clientY + 'px',
           display: 'block'
         }
-        console.log(e)
       },
       clear () {
         this.msgMenuStyle.display = 'none'
