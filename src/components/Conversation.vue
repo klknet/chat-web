@@ -214,12 +214,7 @@
         return i
       },
       addGroupChat: function () {
-        this.$modal.show(CreateGroupChat, {}, {
-          draggable: true,
-          width: 550,
-          height: 'auto',
-          clickToClose: false,
-        })
+        this.$modal.show("createChat")
       },
       //置顶、取消置顶
       top: function () {

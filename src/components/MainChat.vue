@@ -16,7 +16,13 @@
     <div class="thumbnail" v-show="!display" @click="show">
     </div>
 
-    <modals-container/>
+    <modal name="createChat" height="auto" :scrollable="true" :draggable="true"
+           width="550" :clickToClose="true" style="over-flow-y: scroll; max-height:400px;">
+      <CreateGroupChat/>
+    </modal>
+    <modal name="addFriend" height="auto">
+      <AddFriend/>
+    </modal>
     <modal name="profile" width="330" height="360">
       <div class="enlarge">
         <div class="close" @click="$modal.hide('profile')"><span>x</span></div>
@@ -42,10 +48,12 @@
   import util from '@/util'
   import vm from '@/event'
   import userRequest  from '@/user'
+  import CreateGroupChat from '@/components/CreateGroupChat'
+  import AddFriend from '@/components/AddFriend'
 
   export default {
     name: 'MainChat',
-    components: {Left},
+    components: {AddFriend, CreateGroupChat, Left},
     data () {
       return {
         user: {},

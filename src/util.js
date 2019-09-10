@@ -47,7 +47,8 @@ export default {
       let groupFriend = lodash.groupBy(user.friends, friend => friend['firstLetter'])
       let friends = []
       for (let letter in groupFriend) {
-        let friend = {letter: letter, groups: groupFriend[letter]}
+        let sortedFriend = lodash.sortBy(groupFriend[letter], item => item.username)
+        let friend = {letter: letter, groups: sortedFriend}
         friends.push(friend)
       }
       friends.sort((obj1, obj2) => {

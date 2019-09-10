@@ -225,7 +225,7 @@
           })
       },
       addFriend: function () {
-        this.$modal.show(AddFriend, {}, {
+        this.$modal.show('addFriend', {}, {
           draggable: true,
           width: 550,
           height: 485,

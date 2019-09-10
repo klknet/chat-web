@@ -45,8 +45,6 @@
 <script>
   import lodash from 'lodash'
   import storage from '../storage'
-  import util from '../util'
-  import userRequest from '../user'
   import convRequest from '../conversation'
   import config from '@/config'
 
@@ -54,11 +52,18 @@
     name: 'CreateGroupChat',
     created () {
       let user = storage.getUser()
-      this.users = user.groupFriend
+      this.users = Array.from(user.groupFriend)
+      if (user.groupFriend.length > 0) {
+        for (let i=0; i<user.groupFriend.length; i++) {
+          this.users.push({letter: user.groupFriend[i].letter, groups: Array.from(user.groupFriend[i].groups)})
+          this.tempUsers.push({letter: user.groupFriend[i].letter, groups: Array.from(user.groupFriend[i].groups)})
+        }
+      }
     },
     data () {
       return {
         users: [],
+        tempUsers: [],
         username: '',
         pickedUsers: [],
         user: storage.getUser()
@@ -66,18 +71,36 @@
     },
     methods: {
       search: lodash.debounce(function () {
+        this.users.splice(0, this.users.length)
+        if (this.tempUsers.length > 0) {
+          for (let i=0; i<this.tempUsers.length; i++) {
+            this.users.push({letter: this.tempUsers[i].letter, groups: Array.from(this.tempUsers[i].groups)})
+          }
+        }
         if (!this.username) {
           return
         }
-        userRequest.findUsers(this.username).then(res => {
-          this.users = res.data
-        })
+        for (let i=0; i<this.users.length; i++) {
+          let value = this.users[i]
+          for (let j=0; j<value.groups.length; j++) {
+            let friend = value.groups[j]
+            if (!friend.username.includes(this.username) && !friend.remark.includes(this.username)) {
+              value.groups.splice(j--, 1)
+            }
+          }
+          if (this.users[i].groups.length == 0) {
+            this.users.splice(i--, 1)
+          }
+        }
       }, 1000),
       confirm () {
-        console.log(this.pickedUsers)
-        if (this.users) {
-          this.pickedUsers.unshift(this.user.userId)
-          convRequest.groupConversation(this.user.userId, this.pickedUsers).then(res => {
+        if (this.users.length > 0) {
+          var set = new Set()
+          set.add(this.user.userId)
+          for (let user of this.users) {
+            user.groups.forEach(u => set.add(u.userId))
+          }
+          convRequest.groupConversation(this.user.userId, Array.from(set)).then(res => {
             console.log(res.data)
           })
           this.$modal.hide(this.$parent.name)
@@ -121,12 +144,12 @@
   .left {
     width: 50%;
     border-right: solid 1px #F1F1F1;
-    height: 485px;
+
   }
 
   .right {
     width: 50%;
-    position: relative;
+    /*position: relative;*/
   }
 
   .clear {
@@ -168,6 +191,8 @@
 
   .friend-list {
     /*margin-left: 10px;*/
+    height: 460px;
+    overflow-y: scroll;
   }
 
   .friend-list img {

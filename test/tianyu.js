@@ -45,6 +45,17 @@ function getUserList() {
 }
 
 // getToken()
-validateTicket()
+// validateTicket()
 // getUserById()
 // getUserList()
+
+
+var arr = [{age: 3, name:'c'}, {age:4, name:'d'},{age:2, name:'b'}, {age:1, name:'a'}]
+
+var a1 = Array.from(arr)
+a1.splice(0, 1)
+console.log(a1)
+console.log(arr)
+
+
+
