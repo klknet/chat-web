@@ -30,9 +30,9 @@
             </div>
             <div class="group-content">
               <ul>
-                <li v-for="(friend) in value.groups" @click="select(map[friend.userId], friend.userId)"
-                    :class="{active: cur === map[friend.userId]}"
-                    @contextmenu.prevent="menu(friend.userId, $event)">
+                <li v-for="(friend) in value.groups" @click="select(map[friend.destId], friend.destId)"
+                    :class="{active: cur === map[friend.destId]}"
+                    @contextmenu.prevent="menu(friend.destId, $event)">
                   <img :src="fmtImg(friend.profileUrl)" class="avatar"/>
                   <span class="notation">{{friend.remark}}</span>
                 </li>
@@ -189,7 +189,7 @@
           for (let i=0; i<friendGroup.length; i++) {
             let friends = friendGroup[i].groups
             for (let j=0; j<friends.length; j++) {
-              this.map[friends[j].userId] = li_index++
+              this.map[friends[j].destId] = li_index++
             }
           }
         }
@@ -198,13 +198,13 @@
         // console.log(curI, key)
         this.cur = curI
         for (let i=0; i < this.user.friends.length; i++) {
-          if (key === this.user.friends[i].userId) {
+          if (key === this.user.friends[i].destId) {
             this.friend = this.user.friends[parseInt(i)]
           }
         }
       },
       sendMessage () {
-        let destId = this.friend.userId
+        let destId = this.friend.destId
         this.$router.push({name: 'Chat', params: {destId: destId}})
         vm.$emit('navIdx', 0)
       },
@@ -265,8 +265,8 @@
           storage.setUser(user)
           this.user = user
           this.buildMap()
-          if(this.friend.userId) {
-            this.select(this.map[this.friend.userId], this.friend.userId)
+          if(this.friend.destId) {
+            this.select(this.map[this.friend.destId], this.friend.destId)
           }
         })
       },
@@ -275,7 +275,7 @@
       },
       editName() {
         this.prevValue.remark = this.friend.remark
-        this.prevValue.userId = this.friend. userId
+        this.prevValue.userId = this.friend.destId
         this.inEdit = true
         this.$refs.remark.focus()
       },

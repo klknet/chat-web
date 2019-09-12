@@ -173,11 +173,12 @@
       vm.$on('message-build-map', data => {
         this.buildMessageMap(data)
       })
-
+      vm.$on('chat-delete-message', data => {
+        this.deleteMsgNotify(data)
+      })
       vm.$on('message-show', (conv) => {
         this.show(conv)
       })
-
       vm.$on('all-clear', () => {
         this.clear()
       })
@@ -208,7 +209,7 @@
       //群聊成员头像
       groupChatMember (message, conv) {
         if (conv.groupChat) {
-          for (let member of conv.groupChat.members) {
+          for (let member of conv.groupChat) {
             if (member.userId === message.userId) {
               return member
             }
@@ -544,7 +545,7 @@
           msgRequest.delUnread(this.user.userId, conv.conversationId)
         }
         conv.unreadCount = 0
-        let num = conv.type == 1 ? '（' + conv.groupChat.members.length + '）' : ''
+        let num = conv.type == 1 ? '（' + conv.groupChat.length + '）' : ''
         this.chatPerson = {
           notename: conv.notename + num,
           destId: conv.destId,

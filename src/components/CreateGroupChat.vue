@@ -98,8 +98,9 @@
           var set = new Set()
           set.add(this.user.userId)
           for (let user of this.users) {
-            user.groups.forEach(u => set.add(u.userId))
+            user.groups.forEach(u => set.add(u.destId))
           }
+          console.log(Array.from(set))
           convRequest.groupConversation(this.user.userId, Array.from(set)).then(res => {
             console.log(res.data)
           })

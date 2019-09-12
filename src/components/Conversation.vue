@@ -91,6 +91,7 @@
       let params = this.$route.params
       if (params.destId != undefined) {
         for (let i = 0; i < this.conversations.length; i++) {
+          // TODO 新创建的会话还没有生成，此时cur无法切换到目标会话
           if (this.conversations[i].destId == params.destId) {
             this.show(this.conversations[i], i)
             return
@@ -104,7 +105,6 @@
       }
     },
     mounted () {
-      console.log('ee')
       this.getConversation()
       //更新会话列表
       vm.$on('chat-get-conversation', data => {
@@ -119,7 +119,9 @@
       })
       vm.$on('chat-update-conversation', data => {
         let idx = this.indexOfConversation(data)
-        this.conversations[idx] = data
+        this.conversations[idx].updateTime = data.updateTime
+        this.conversations[idx].lastMsg = data.lastMsg
+        this.conversations[idx].messageType = data.messageType
         storage.setConversation(this.conversations)
       })
       vm.$on('conversation-update-lastmsg', data => {
@@ -150,16 +152,14 @@
           util.notify(message)
         }
       })
-      vm.$on('chat-delete-message', data => {
-        this.deleteMsgNotify(data)
-      })
+
 
       vm.$on('all-clear', () => {
         this.clear()
       })
     },
     created() {
-      this.getConversation()
+      // this.getConversation()
     },
     methods: {
       //获取会话列表
