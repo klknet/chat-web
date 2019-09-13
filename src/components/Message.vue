@@ -226,6 +226,9 @@
             if (this.cur != -1) {
               this.scroll2End()
             }
+            while (info.messages.length > 128) {
+              info.messages.shift()
+            }
             break
           }
         }
