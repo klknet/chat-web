@@ -221,11 +221,11 @@
         for (let i in this.messageMap) {
           let info = this.messageMap[i]
           if (info.conv.conversationId === message.conversationId && !info.msgIdSet.has(message.messageId)) {
-            if (info.messages.length==0 || info.messages[info.messages.length-1].createTime<message.createTime)
+            if (info.messages.length==0 || new Date(info.messages[info.messages.length-1].createTime).getTime()<message.createTime)
               info.messages.push(message)
             else {
               for (let i=info.messages.length-1;  i>=0; i--){
-                if (info.messages[i].createTime<message.createTime) {
+                if (new Date(info.messages[i].createTime).getTime()<message.createTime) {
                   info.messages.splice(i+1, 0, message)
                   break
                 }
