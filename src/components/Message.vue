@@ -221,7 +221,16 @@
         for (let i in this.messageMap) {
           let info = this.messageMap[i]
           if (info.conv.conversationId === message.conversationId && !info.msgIdSet.has(message.messageId)) {
-            info.messages.push(message)
+            if (info.messages.length==0 || info.messages[info.messages.length-1].createTime<message.createTime)
+              info.messages.push(message)
+            else {
+              for (let i=info.messages.length-1;  i>=0; i--){
+                if (info.messages[i].createTime<message.createTime) {
+                  info.messages.unshift(i+1, message)
+                  break
+                }
+              }
+            }
             info.msgIdSet.add(message.messageId)
             if (this.cur != -1) {
               this.scroll2End()
