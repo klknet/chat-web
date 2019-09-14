@@ -226,7 +226,7 @@
             else {
               for (let i=info.messages.length-1;  i>=0; i--){
                 if (info.messages[i].createTime<message.createTime) {
-                  info.messages.unshift(i+1, message)
+                  info.messages.splice(i+1, 0, message)
                   break
                 }
               }
