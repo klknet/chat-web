@@ -477,7 +477,7 @@
         } else {
           let idx = this.conversationIndex(message.conversationId)
           if (idx != -1) {
-            let conv = this.message2send[idx].conv
+            let conv = this.messageMap[idx].conv
             let member = this.groupChatMember(message, conv)
             return member.nickname + '撤回了一条消息'
           }
