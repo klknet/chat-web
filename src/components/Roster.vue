@@ -225,12 +225,7 @@
           })
       },
       addFriend: function () {
-        this.$modal.show('addFriend', {}, {
-          draggable: true,
-          width: 550,
-          height: 485,
-          clickToClose: false,
-        })
+        this.$modal.show('addFriend')
       },
       convMenu (index, e) {
         this.delIdx = index

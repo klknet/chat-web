@@ -20,7 +20,8 @@
            width="550" :clickToClose="true" style="over-flow-y: scroll; max-height:400px;">
       <CreateGroupChat/>
     </modal>
-    <modal name="addFriend" height="auto">
+    <modal name="addFriend" height="auto" :scrollable="true" :draggable="true"
+           width="550" style="over-flow-y: scroll; max-height:400px;">
       <AddFriend/>
     </modal>
     <modal name="profile" width="330" height="360">

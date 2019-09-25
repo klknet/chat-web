@@ -117,7 +117,7 @@
   .left {
     width: 50%;
     border-right: solid 1px #F1F1F1;
-    height: 485px;
+    min-height: 400px;
   }
 
   .right {
