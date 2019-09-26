@@ -15,13 +15,15 @@ let connect = function () {
   wsChat.onerror = (e) => {
     console.error('websocket communication error', e)
   }
-  
+
   wsChat.onclose = (e) => {
     console.log('connection closed', e.code, e.reason, e.wasClean)
+    if (e.code == 1006) {
+      wsChat.close()
+    }
     setTimeout(() => {
-      if (wsChat.readyState == 0) {
-        this.connect()
-      }
+      console.log('ws state', wsChat.readyState)
+      this.connect()
     }, 1000 * 8)
   }
   //处理消息
