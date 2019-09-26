@@ -8,6 +8,13 @@ let live = false
 
 export default {
   id: '',
+  reconnect: function() {
+    console.log('connection closed')
+    if (this.id)
+      clearInterval(this.id)
+    live = false
+    this.id = setInterval(this.connect, 1000*8);
+  },
   connect: function () {
     if (this.id)
       clearInterval(this.id)
@@ -21,14 +28,7 @@ export default {
       live = true
       ping()
     }
-    let reconnect = (evt) => {
-      if (this.id)
-        clearInterval(this.id)
-      live = false
-      console.log('connection closed')
-      this.id = setInterval(this.connect, 1000*16);
-    }
-    wsChat.onclose = reconnect
+    wsChat.onclose = this.reconnect
     //处理消息
     wsChat.onmessage = (evt) => {
       let resp = JSON.parse(evt.data)

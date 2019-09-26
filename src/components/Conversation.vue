@@ -302,6 +302,8 @@
           }
           this.conversations.splice(idx, 1)
           this.conversations.splice(i, 0, conv)
+          if (this.cur == -1)
+            return
           if (stay) {
             this.cur = this.indexOfConversation(curConv)
           } else if (this.cur != i) {
