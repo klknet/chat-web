@@ -15,7 +15,10 @@
     </div>
     <div class="thumbnail" v-show="!display" @click="show">
     </div>
-
+    <div class="reconnect" v-show="reconnect">
+      <i class="fa fa-exclamation" style="color: red; font-size: 12px;"></i>
+      <span style="color: red;">网络连接已断开，重新连接中...</span>
+    </div>
     <modal name="createChat" height="auto" :scrollable="true" :draggable="true"
            width="550" :clickToClose="true" style="over-flow-y: scroll; max-height:400px;">
       <CreateGroupChat/>
@@ -60,20 +63,29 @@
         user: {},
         display: true,
         max: false,
+        reconnect: false
       }
     },
     created () {
       util.getAesKey()
       let user = storage.getUser()
-      if(!user)
+      if(!user) {
         util.toIndex()
-      this.user = user
+      }
       ws.connect()
+      this.user = user
       this.$router.push({name: 'Chat'})
-
+    },
+    destroyed() {
+      console.log("destroyed")
     },
     mounted () {
-
+      vm.$on('main-reconnect', data => {
+        this.reconnect = false
+      })
+      vm.$on('main-connected', data => {
+        this.reconnect = false
+      })
     },
     methods: {
       clear() {
@@ -83,7 +95,6 @@
         userRequest.delTicket(this.user.userId)
         ws.close()
         storage.removeUser()
-
       },
       maxWin: function () {
         this.max = !this.max
@@ -204,6 +215,10 @@
   .upload-avatar{
     cursor: pointer;
 
+  }
+  .reconnect {
+    height: 30px;
+    display: flex;
   }
 
 

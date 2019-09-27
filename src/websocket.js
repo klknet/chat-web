@@ -5,26 +5,31 @@ import config from '@/config'
 
 let wsChat
 
-let connect = function () {
+let $scope={}
+$scope.lock = false
+
+$scope.connect = function () {
+  if ($scope.lock)
+    return
+  $scope.lock = true
   let user = storage.getUser()
   wsChat = new WebSocket(config.ws + '?userId=' + user.userId + '&ticket=' + user.ticket)
   wsChat.onopen = () => {
-    console.log('create WebSocket connection')
+    vm.$emit('main-connected')
+    console.log("create websocket")
     ping()
   }
   wsChat.onerror = (e) => {
     console.error('websocket communication error', e)
   }
-
   wsChat.onclose = (e) => {
+    wsChat.onclose = function(e) {}
     console.log('connection closed', e.code, e.reason, e.wasClean)
-    if (e.code == 1006) {
-      wsChat.close()
-    }
     setTimeout(() => {
-      console.log('ws state', wsChat.readyState)
-      this.connect()
-    }, 1000 * 8)
+      vm.$emit('main-reconnect');
+      $scope.lock = false
+      $scope.connect()
+    }, 1000 * 5)
   }
   //处理消息
   wsChat.onmessage = (evt) => {
@@ -36,11 +41,11 @@ let connect = function () {
       case 1:
         // console.log(resp)
         if (resp.code == 60001) {
-          wsChat.close()
+          $scope.close()
           util.toIndex()
         }
         else if (resp.code == 80001) {
-          wsChat.close()
+          $scope.close()
           let time = new Date()
           time.getHours()
           time.getMinutes()
@@ -90,19 +95,23 @@ let connect = function () {
     }
     let ping = JSON.stringify(req)
     setTimeout(() => {
-      send(ping)
+      $scope.send(ping)
     }, 15000)
   }
+}
 
-  function close () {
+$scope.close = function close () {
+  if (wsChat != null) {
+    console.log('close websocket')
+    wsChat.onclose = function(){}
     wsChat.close()
   }
 }
 
-let send =  function (data) {
-  if (wsChat.readyState == 1) {
+$scope.send =  function (data) {
+  if (wsChat !=null && wsChat.readyState == 1) {
     wsChat.send(data)
   }
 }
 
-export default {connect, send}
+export default $scope
