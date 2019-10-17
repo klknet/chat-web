@@ -99,8 +99,11 @@
         }
         convRequest.buildConversation(this.user.userId, params.destId)
           .then(res => {
-            this.getConversation()
-            this.show(res.data, this.indexOfConversation(res.data))
+            let i = this.noTopIndex()
+            vm.$emit('add-conversation', res.data)
+            this.conversations.splice(i, 0, res.data)
+            storage.setConversation(this.conversations)
+            this.cur = i
           })
       }
     },

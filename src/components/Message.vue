@@ -173,6 +173,9 @@
       vm.$on('message-build-map', data => {
         this.buildMessageMap(data)
       })
+      vm.$on('add-conversation', data => {
+        this.addConversation(data)
+      })
       vm.$on('chat-delete-message', data => {
         this.deleteMsgNotify(data)
       })
@@ -495,6 +498,21 @@
           info.requested = false
           info.conv = conv
           this.messageMap.push(info)
+        }
+      },
+      addConversation(conv) {
+        this.messageMap.push({
+          messages: [],
+          msgIdSet: new Set(),
+          showMore: false,
+          requested: false,
+          conv: conv
+        })
+        this.cur = conv.conversationId
+        this.chatPerson = {
+          notename: conv.notename,
+          destId: conv.destId,
+          profileUrl: conv.profileUrl
         }
       },
       //移除messageMap里的会话引用
