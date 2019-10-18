@@ -153,6 +153,7 @@
     },
     activated () {
       this.scroll2End()
+      // document.getElementById("sendArea").focus()
     },
     data() {
       return {
@@ -569,6 +570,7 @@
       },
       //点击会话，显示历史消息
       show (conv) {
+        document.getElementById("sendArea").focus()
         this.cur = conv.conversationId
         if (conv.unreadCount && conv.unreadCount > 0) {
           vm.$emit('left-unread-num', 0, -conv.unreadCount)
