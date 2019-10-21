@@ -101,7 +101,7 @@
             user.groups.forEach(u => set.add(u.destId))
           }
           console.log(Array.from(set))
-          convRequest.groupConversation(this.user.userId, Array.from(set)).then(res => {
+          convRequest.groupConversation(this.user.userId, this.pickedUsers).then(res => {
             console.log(res.data)
           })
           this.$modal.hide(this.$parent.name)
