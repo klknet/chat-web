@@ -80,11 +80,17 @@ $scope.connect = function () {
           console.log('delete')
           vm.$emit('chat-delete-message', JSON.parse(resp.data))
         } else if (resp.code == 70004) {
-          vm.$emit('chat-update-conversation', JSON.parse(resp.data))
+          // vm.$emit('chat-update-conversation', JSON.parse(resp.data))
         } else if (resp.code == 70005) {
           vm.$emit('chat-ack', resp.data)
         }
         break
+      case 3:
+        if (resp.code == 90001) {
+          vm.$emit('chat-update-conversation', JSON.parse(resp.data))
+        } else if (resp.code == 90002) {
+          vm.$emit('chat-update-conv-name', JSON.parse(resp.data))
+        }
     }
   }
 

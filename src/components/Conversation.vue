@@ -54,11 +54,28 @@
         <li @click="dnd">
           <a>{{isDnd?'开启新消息提醒':'消息免打扰'}}</a>
         </li>
+        <li v-show="isGroupChat" @click="popChangeConvName">
+          <a>修改群名称</a>
+        </li>
         <li class="divider" @click="remove">
           <a>删除聊天</a>
         </li>
       </ul>
     </div>
+
+    <modal name="changeConvName" width="250" height="150" :draggable="true">
+      <div>
+        <div class="change-div">
+          <textarea class="change-conv" v-model="newConvName"></textarea>
+        </div>
+        <div class="change-div">
+          <div class="btn-group">
+            <button class="confirm" @click="updateConvName">确定</button>
+            <button class="cancel" @click="$modal.hide('changeConvName')">取消</button>
+          </div>
+        </div>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -83,6 +100,8 @@
         menuStyle: {},
         isTop: false,
         isDnd: false,
+        isGroupChat: false,
+        newConvName: '',
         delIdx: -1,
       }
     },
@@ -155,7 +174,13 @@
           util.notify(message)
         }
       })
-
+      vm.$on('chat-update-conv-name', (data) => {
+        let idx = this.indexOf(data.cid)
+        if (idx != -1) {
+          this.conversations[idx].notename = data.name
+          storage.setConversation(this.conversations)
+        }
+      })
 
       vm.$on('all-clear', () => {
         this.clear()
@@ -263,6 +288,23 @@
             .then(() => conv.dnd = !conv.dnd)
         }
       },
+      popChangeConvName: function() {
+        if (this.delIdx >= 0) {
+          this.newConvName = this.conversations[this.delIdx].notename
+          this.$modal.show('changeConvName', {
+            // title: 'confirm',
+            text: '修改群名称',
+          })
+        }
+      },
+      updateConvName: function() {
+        if (this.delIdx >= 0) {
+          let conv = this.conversations[this.delIdx]
+          if (this.newConvName != conv.notename)
+            convRequest.changeGroupChatName(conv.conversationId, conv.destId, this.newConvName)
+          this.$modal.hide('changeConvName')
+        }
+      },
       //删除会话
       remove () {
         if (this.delIdx >= 0) {
@@ -335,6 +377,7 @@
         this.delIdx = index
         this.isTop = this.conversations[index].top
         this.isDnd = this.conversations[index].dnd
+        this.isGroupChat = this.conversations[index].type == 1
         this.menuStyle = {
           left: e.clientX + 'px',
           top: e.clientY + 'px',
@@ -546,6 +589,35 @@
     border: solid 1px #d4d4d4;
   }
 
+  .confirm {
+    /*background-color: #8CD58C;*/
+    background-color: #1AAD19;
+    color: white;
+  }
+
+  .confirm, .cancel {
+    color: white;
+    width: 62px;
+    text-align: center;
+    font-size: 13px;
+    padding: 5px 0;
+    border: 0;
+  }
+
+  .txt {
+    margin-top: 30px;
+    margin-left: 30px;
+  }
+
+  .cancel {
+    color: black;
+  }
+
+  .btn-group {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+  }
 
   .conv-menu .divider {
     border-top: solid 1px #e7e7e7;
@@ -558,6 +630,14 @@
 
   .conv-menu li:hover {
     background-color: #DFDDDB;
+  }
+  .change-div {
+    padding: 20px;
+    text-align: center;
+  }
+  .change-conv {
+    outline:  none;
+    /*border: none;*/
   }
 
 

@@ -63,5 +63,12 @@ export default {
   groupChatMember:  function(id) {
     if (id)
       return axios.get("/conversation/groupChatMember?id="+id)
+  },
+  /*
+  修改群聊名称
+   */
+  changeGroupChatName: function (id, groupId, name) {
+    axios.post("/conversation/changeGroupChatName?id="+id+"&groupId="+groupId+"&name="+encodeURIComponent(name))
   }
+
 }

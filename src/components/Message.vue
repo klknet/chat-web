@@ -203,6 +203,11 @@
           }
         }
       })
+      vm.$on('chat-update-conv-name', data => {
+        if (this.cur == data.cid) {
+          this.chatPerson.notename = data.name
+        }
+      })
     },
     methods: {
       //当前消息和上条消息间隔是否超过5分钟
