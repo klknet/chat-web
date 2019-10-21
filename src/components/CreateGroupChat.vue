@@ -18,7 +18,7 @@
                 <li v-for="(friend) in value.groups">
                   <img :src="fmtImg(friend.profileUrl)" class="avatar"/>
                   <span class="nickname">{{friend.remark}}</span>
-                  <input type="checkbox" v-bind:id="friend.userId" v-bind:value="friend.userId"
+                  <input type="checkbox" v-bind:id="friend.destId" v-bind:value="friend.destId"
                          v-model="pickedUsers" class="checkbox"/>
                 </li>
               </ul>
@@ -95,12 +95,12 @@
       }, 1000),
       confirm () {
         if (this.users.length > 0) {
-          var set = new Set()
-          set.add(this.user.userId)
-          for (let user of this.users) {
-            user.groups.forEach(u => set.add(u.destId))
-          }
-          console.log(Array.from(set))
+          // var set = new Set()
+          // set.add(this.user.userId)
+          // for (let user of this.users) {
+          //   user.groups.forEach(u => set.add(u.destId))
+          // }
+          // console.log(Array.from(set))
           convRequest.groupConversation(this.user.userId, this.pickedUsers).then(res => {
             console.log(res.data)
           })
